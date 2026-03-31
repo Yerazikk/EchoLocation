@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Video files — too large for Vercel (50MB per-file limit)
+# Host externally (S3, Cloudflare R2, etc.) and update URLs in src/App.tsx
+*.mp4
+*.mov
+*.webm
+
+# macOS zip artifacts
+__MACOSX/
+
+# Screenshots
+Screenshot*.png
