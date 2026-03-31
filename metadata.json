@@ -1,0 +1,5 @@
+{
+  "name": "Echolocation",
+  "description": "Interactive school surveillance and audio-video reconstruction prototype with synchronized multi-camera playback.",
+  "requestFramePermissions": []
+}
