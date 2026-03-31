@@ -7,11 +7,10 @@ coverage/
 .env*
 !.env.example
 
-# Video files — too large for Vercel (50MB per-file limit)
-# Host externally (S3, Cloudflare R2, etc.) and update URLs in src/App.tsx
-*.mp4
+# Raw/source video files
 *.mov
 *.webm
+"trimmed cam*.mp4"
 
 # macOS zip artifacts
 __MACOSX/
