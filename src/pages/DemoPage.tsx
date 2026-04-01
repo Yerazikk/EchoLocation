@@ -22,6 +22,13 @@ const VIDEO_MAP: Record<string, string> = {
   'cam-4': '/cam4.mp4',
 };
 
+const POSTER_MAP: Record<string, string> = {
+  'cam-1': '/cam1-poster.png',
+  'cam-2': '/cam2-poster.png',
+  'cam-3': '/cam3-poster.png',
+  'cam-4': '/cam4-poster.png',
+};
+
 // Per-camera offset (seconds) to compensate for file-level sync drift
 const SYNC_OFFSETS: Record<string, number> = {
   'cam-1': 0,
@@ -63,8 +70,15 @@ const CameraHoverPreview = React.memo(({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="aspect-video bg-black relative overflow-hidden">
-      <video ref={setRef} src={src} className="absolute inset-0 w-full h-full object-cover" playsInline />
+    <div className="aspect-video bg-ui-card relative overflow-hidden">
+      <video 
+        ref={setRef} 
+        src={src} 
+        poster={`/${src.split('/').pop()?.replace('.mp4', '')}-poster.png`}
+        className="absolute inset-0 w-full h-full object-cover" 
+        playsInline 
+        preload="auto"
+      />
       <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
         <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
@@ -499,6 +513,7 @@ export const DemoPage = () => {
                                   className="absolute inset-0 w-full h-full object-cover" 
                                   playsInline 
                                   muted
+                                  preload="auto"
                                   onLoadedData={e => {
                                     const t = timelineStateRef.current.currentTime;
                                     e.currentTarget.currentTime = t > 0 ? t : 0.001;
@@ -524,8 +539,10 @@ export const DemoPage = () => {
                           <video 
                             ref={el => { hoverVideoRefsMap.current[node.id] = el; }}
                             src={VIDEO_MAP[node.id]} 
+                            poster={POSTER_MAP[node.id]}
                             muted 
                             playsInline
+                            preload="auto"
                             onLoadedData={e => {
                               const t = timelineStateRef.current.currentTime;
                               e.currentTarget.currentTime = t > 0 ? t : 0.001;
@@ -583,6 +600,7 @@ export const DemoPage = () => {
                   key={id}
                   ref={el => { videoRefsMap.current[id] = el; }}
                   src={src}
+                  poster={POSTER_MAP[id]}
                   className="absolute inset-0 w-full h-full object-cover"
                   style={{ opacity: selectedNodeId === id ? 1 : 0, willChange: 'opacity', pointerEvents: 'none' }}
                   onMouseEnter={() => setIsSidebarHovered(true)}
