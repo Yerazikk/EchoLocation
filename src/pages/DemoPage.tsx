@@ -119,7 +119,10 @@ export const DemoPage = () => {
       if (!video) return;
       if (Math.abs(video.currentTime - time) > 0.3) video.currentTime = time;
       if (playing) video.play().catch(() => {});
-      else         video.pause();
+      else {
+        video.pause();
+        video.muted = true; // always mute on pause; handlePlayClip unmutes the clip camera
+      }
     });
     // Also sync hover preview if visible
     const hv = hoverVideoRef.current;
@@ -232,6 +235,9 @@ export const DemoPage = () => {
     // Switch sidebar to the event's camera so the user sees the relevant feed
     setSelectedNodeId(event.nodeId);
     syncAll(startTime, true);
+    // Unmute the clip's camera so audio plays during clip playback
+    const clipVideo = videoRefsMap.current[event.nodeId];
+    if (clipVideo) clipVideo.muted = false;
     setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
   };
 
