@@ -80,8 +80,8 @@ export const DemoPage = () => {
 
   // All 4 video refs — always mounted, always synced
   const videoRefsMap = useRef<Record<string, HTMLVideoElement | null>>({});
-  // Hover preview video ref
-  const hoverVideoRef = useRef<HTMLVideoElement | null>(null);
+  // All 4 hover preview video refs — always mounted, always synced
+  const hoverVideoRefsMap = useRef<Record<string, HTMLVideoElement | null>>({});
   // Always-fresh timeline state for use in callbacks
   const timelineStateRef = useRef({ currentTime: 0, isPlaying: false });
 
@@ -131,24 +131,24 @@ export const DemoPage = () => {
   const syncAll = useCallback((time: number, playing: boolean) => {
     const syncId = ++syncIdRef.current;
 
-    const ids = Object.keys(videoRefsMap.current);
-    const videos = ids
-      .map(id => videoRefsMap.current[id])
-      .filter((v): v is HTMLVideoElement => v !== null);
+    const mainIds = Object.keys(videoRefsMap.current);
+    const hoverIds = Object.keys(hoverVideoRefsMap.current);
+    
+    const allVideos = [
+      ...mainIds.map(id => ({ id, v: videoRefsMap.current[id], offset: SYNC_OFFSETS[id] ?? 0 })),
+      ...hoverIds.map(id => ({ id: `hover-${id}`, v: hoverVideoRefsMap.current[id], offset: 0 }))
+    ].filter(v => v.v !== null) as { id: string; v: HTMLVideoElement; offset: number }[];
 
     // Always pause first so nothing plays while seeking
-    videos.forEach(v => v.pause());
+    allVideos.forEach(item => item.v.pause());
 
     if (!playing) {
-      ids.forEach(id => {
-        const v = videoRefsMap.current[id];
-        if (!v) return;
-        const target = Math.max(0, time + (SYNC_OFFSETS[id] ?? 0));
-        if (Math.abs(v.currentTime - target) > 0.3) v.currentTime = target;
-        // Do not touch muted state here, it's controlled by React rendering for the sidebar
+      allVideos.forEach(item => {
+        const target = Math.max(0, time + item.offset);
+        if (Math.abs(item.v.currentTime - target) > 0.3) {
+          item.v.currentTime = target;
+        }
       });
-      const hv = hoverVideoRef.current;
-      if (hv) { if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time; hv.pause(); }
       return;
     }
 
@@ -157,28 +157,19 @@ export const DemoPage = () => {
     let pending = 0;
     const tryPlay = () => {
       if (syncIdRef.current !== syncId) return; // superseded
-      if (--pending === 0) videos.forEach(v => v.play().catch(() => {}));
+      if (--pending === 0) allVideos.forEach(item => item.v.play().catch(() => {}));
     };
 
-    ids.forEach(id => {
-      const v = videoRefsMap.current[id];
-      if (!v) return;
-      const target = Math.max(0, time + (SYNC_OFFSETS[id] ?? 0));
-      if (Math.abs(v.currentTime - target) > 0.3) {
+    allVideos.forEach(item => {
+      const target = Math.max(0, time + item.offset);
+      if (Math.abs(item.v.currentTime - target) > 0.3) {
         pending++;
-        v.addEventListener('seeked', tryPlay, { once: true });
-        v.currentTime = target;
+        item.v.addEventListener('seeked', tryPlay, { once: true });
+        item.v.currentTime = target;
       }
     });
 
-    if (pending === 0) videos.forEach(v => v.play().catch(() => {}));
-
-    // Hover preview — sync independently (not blocking main play)
-    const hv = hoverVideoRef.current;
-    if (hv) {
-      if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time;
-      hv.play().catch(() => {});
-    }
+    if (pending === 0) allVideos.forEach(item => item.v.play().catch(() => {}));
   }, []);
 
   // ─── Interval timer — advances currentTime only, never touches videos ─────
@@ -421,7 +412,7 @@ export const DemoPage = () => {
                     className="absolute group"
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     onMouseEnter={() => setHoveredNode(node.id)}
-                    onMouseLeave={() => { setHoveredNode(null); hoverVideoRef.current = null; }}
+                    onMouseLeave={() => setHoveredNode(null)}
                   >
                     <div
                       className="relative cursor-pointer -translate-x-1/2 -translate-y-1/2"
@@ -490,30 +481,58 @@ export const DemoPage = () => {
                         </span>
                       </div>
 
-                      {/* Hover preview popup */}
+                      {/* Hover preview popup — always mounted, synchronized by the main sync engine */}
                       <AnimatePresence>
                         {hoveredNode === node.id && (
                           <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                            className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none
+                            className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none z-[60]
                               ${node.y < 50 ? 'top-full mt-8' : 'bottom-full mb-12'}`}
                           >
-                            {VIDEO_MAP[node.id] && (
-                              <CameraHoverPreview
-                                src={VIDEO_MAP[node.id]}
-                                nodeName={node.name}
-                                registerRef={el => { hoverVideoRef.current = el; }}
-                                timelineStateRef={timelineStateRef}
-                              />
-                            )}
-                            <div className="p-2 border-t border-ui-border">
+                            <div className="aspect-video bg-black relative overflow-hidden">
+                              {VIDEO_MAP[node.id] && (
+                                <video 
+                                  ref={el => { hoverVideoRefsMap.current[node.id] = el; }}
+                                  src={VIDEO_MAP[node.id]} 
+                                  className="absolute inset-0 w-full h-full object-cover" 
+                                  playsInline 
+                                  muted
+                                  onLoadedData={e => {
+                                    const t = timelineStateRef.current.currentTime;
+                                    e.currentTarget.currentTime = t > 0 ? t : 0.001;
+                                  }}
+                                />
+                              )}
+                              <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10 text-white/90">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-[8px] font-mono uppercase tracking-tighter text-white/80">Live Feed</span>
+                              </div>
+                              <div className="scanline" />
+                            </div>
+                            <div className="p-2 border-t border-ui-border bg-ui-bg relative z-10">
                               <span className="text-[9px] font-display font-bold uppercase tracking-widest text-ui-accent">{node.name}</span>
                             </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
+                      
+                      {/* Technical preload: Render invisible videos for nodes we ARENT hovering to keep them synced and ready */}
+                      {hoveredNode !== node.id && VIDEO_MAP[node.id] && (
+                        <div className="hidden">
+                          <video 
+                            ref={el => { hoverVideoRefsMap.current[node.id] = el; }}
+                            src={VIDEO_MAP[node.id]} 
+                            muted 
+                            playsInline
+                            onLoadedData={e => {
+                              const t = timelineStateRef.current.currentTime;
+                              e.currentTarget.currentTime = t > 0 ? t : 0.001;
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
