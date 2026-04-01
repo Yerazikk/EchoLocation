@@ -54,7 +54,7 @@ const CameraHoverPreview = React.memo(({
 
   return (
     <div className="aspect-video bg-black relative overflow-hidden">
-      <video ref={setRef} src={src} className="absolute inset-0 w-full h-full object-cover" muted playsInline />
+      <video ref={setRef} src={src} className="absolute inset-0 w-full h-full object-cover" playsInline />
       <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
         <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
@@ -468,6 +468,7 @@ export const DemoPage = () => {
                   src={src}
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
                   style={{ opacity: selectedNodeId === id ? 1 : 0, pointerEvents: 'none' }}
+                  muted
                   playsInline
                 />
               ))}
