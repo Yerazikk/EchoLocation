@@ -54,6 +54,8 @@ const CameraHoverPreview = React.memo(({
     const init = () => {
       const { currentTime, isPlaying } = timelineStateRef.current;
       el.currentTime = currentTime;
+      el.muted = false;
+      el.volume = 1.0;
       if (isPlaying) el.play().catch(() => {});
     };
     if (el.readyState >= 1) init();
@@ -102,6 +104,7 @@ export const DemoPage = () => {
   const [hoveredNode,    setHoveredNode]    = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeEvents,   setActiveEvents]   = useState<AudioEvent[]>([]);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const clipEndTimeRef    = useRef<number | null>(null);
   const lastTriggeredRef  = useRef<Set<string>>(new Set());
@@ -141,7 +144,7 @@ export const DemoPage = () => {
         if (!v) return;
         const target = Math.max(0, time + (SYNC_OFFSETS[id] ?? 0));
         if (Math.abs(v.currentTime - target) > 0.3) v.currentTime = target;
-        v.muted = true;
+        // Do not touch muted state here, it's controlled by React rendering for the sidebar
       });
       const hv = hoverVideoRef.current;
       if (hv) { if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time; hv.pause(); }
@@ -190,11 +193,15 @@ export const DemoPage = () => {
           if (end !== null && prev.currentTime >= end) {
             clipEndTimeRef.current = null;
             syncAll(end, false);
+            // Mute all sidebar videos when clip ends
+            Object.values(videoRefsMap.current).forEach(v => { 
+              if (v instanceof HTMLVideoElement) v.muted = true; 
+            });
             return { ...prev, isPlaying: false, currentTime: end };
           }
-          return { ...prev, currentTime: prev.currentTime + 0.1 };
+          return { ...prev, currentTime: prev.currentTime + 0.05 };
         });
-      }, 100);
+      }, 50);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
@@ -211,17 +218,7 @@ export const DemoPage = () => {
       return;
     }
 
-    // Scrubbed backward — re-arm events that are now in the future
-    // Skip this when the jump came from a clip play (log should stay intact)
-    if (currentTime < prevTimeRef.current) {
-      if (!isClipJumpRef.current) {
-        CHOREOGRAPHED_EVENTS.forEach(e => {
-          if (e.timestamp > currentTime) lastTriggeredRef.current.delete(e.id);
-        });
-        setActiveEvents(prev => prev.filter(e => e.timestamp <= currentTime));
-      }
-      isClipJumpRef.current = false;
-    }
+    // Keeping the persistent log (events no longer delete when scrubbing backward)
     prevTimeRef.current = currentTime;
 
     const now = Date.now();
@@ -287,8 +284,9 @@ export const DemoPage = () => {
   };
 
   const handlePlayClip = (event: AudioEvent) => {
-    const startTime = Math.max(0, event.timestamp - 3);
-    const endTime   = Math.min(TOTAL_DURATION, event.timestamp + 5);
+    console.log(`[AudioDebug] PlayClip triggered for ${event.label} at ${event.timestamp}s`);
+    const startTime = Math.max(0, event.timestamp - 1);
+    const endTime   = Math.min(TOTAL_DURATION, event.timestamp + 2);
     clipEndTimeRef.current = endTime;
     // Preserve all events seen up to now so the log doesn't clear when we jump back
     CHOREOGRAPHED_EVENTS.forEach(e => {
@@ -296,10 +294,24 @@ export const DemoPage = () => {
     });
     isClipJumpRef.current = true;
     setSelectedNodeId(event.nodeId);
+    
+    // Unmute the specified video immediately to satisfy browser requirements for user gesture
+    const v = videoRefsMap.current[event.nodeId];
+    if (v) {
+      v.muted = false;
+      v.volume = 1.0;
+      console.log(`[AudioDebug] Unmuted video for camera: ${event.nodeId}`);
+    }
+
+    // CRITICAL: Synchronously initiate play on all videos to capture the user gesture
+    // This prevents "NotAllowedError" if syncAll() takes too long to seek.
+    Object.values(videoRefsMap.current).forEach(vid => {
+      if (vid instanceof HTMLVideoElement) {
+        vid.play().catch(err => console.debug('[AudioDebug] Sync play error (expected if seeking):', err));
+      }
+    });
+
     syncAll(startTime, true);
-    // Unmute the clip's camera so audio plays during clip playback
-    const clipVideo = videoRefsMap.current[event.nodeId];
-    if (clipVideo) clipVideo.muted = false;
     setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
   };
 
@@ -315,7 +327,7 @@ export const DemoPage = () => {
     CHOREOGRAPHED_EVENTS.filter(e =>
       e.nodeId === selectedNodeId &&
       (e.timestamp <= timeline.currentTime || lastTriggeredRef.current.has(e.id))
-    ),
+    ).sort((a, b) => b.timestamp - a.timestamp),
     [selectedNodeId, timeline.currentTime]
   );
 
@@ -527,7 +539,11 @@ export const DemoPage = () => {
               )}
             </div>
 
-            <div className="aspect-video bg-black rounded-lg border border-white/5 relative overflow-hidden shadow-2xl">
+            <div 
+              className="aspect-video bg-black rounded-lg border border-white/5 relative overflow-hidden shadow-2xl"
+              onMouseEnter={() => setIsSidebarHovered(true)}
+              onMouseLeave={() => setIsSidebarHovered(false)}
+            >
               {/* All 4 videos always mounted — only selected is visible */}
               {Object.entries(VIDEO_MAP).map(([id, src]) => (
                 <video
@@ -536,7 +552,9 @@ export const DemoPage = () => {
                   src={src}
                   className="absolute inset-0 w-full h-full object-cover"
                   style={{ opacity: selectedNodeId === id ? 1 : 0, willChange: 'opacity', pointerEvents: 'none' }}
-                  muted
+                  onMouseEnter={() => setIsSidebarHovered(true)}
+                  onMouseLeave={() => setIsSidebarHovered(false)}
+                  muted={!(selectedNodeId === id && (isSidebarHovered || (clipEndTimeRef.current !== null && timeline.isPlaying)))}
                   playsInline
                   preload="auto"
                   onLoadedData={e => {
@@ -614,8 +632,11 @@ export const DemoPage = () => {
                 cameraEvents.length > 0 ? (
                   cameraEvents.map(event => (
                     <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      layout
+                      initial={{ opacity: 0, x: 10, y: 0 }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ layout: { duration: 0.3 } }}
                       key={event.id}
                       onClick={() => handleJumpToEvent(event.timestamp)}
                       className="group flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
@@ -641,7 +662,7 @@ export const DemoPage = () => {
                             <Play size={10} fill="currentColor" />
                             <span className="text-[8px] font-bold uppercase tracking-tighter">Play Clip</span>
                           </button>
-                          <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">8s window</span>
+
                         </div>
                       </div>
                     </motion.div>
