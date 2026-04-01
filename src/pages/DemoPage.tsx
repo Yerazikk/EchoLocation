@@ -264,7 +264,24 @@ export const DemoPage = () => {
             <h1 className="font-display font-bold tracking-widest text-lg uppercase">Echolocation</h1>
           </div>
         </div>
-
+        <div className="hidden md:flex items-center gap-8">
+          {[
+            { name: 'Overview', path: '/#overview' },
+            { name: 'Capabilities', path: '/#capabilities' },
+            { name: 'Early Access', path: '/mvp' },
+            { name: 'Contact', path: '/#contact' },
+          ].map((item) => (
+            item.path.startsWith('/#') ? (
+              <a key={item.name} href={item.path} className="font-mono text-[11px] uppercase tracking-widest text-gray-400 hover:text-tactical-cyan transition-colors">
+                {item.name}
+              </a>
+            ) : (
+              <Link key={item.name} to={item.path} className="font-mono text-[11px] uppercase tracking-widest text-gray-400 hover:text-tactical-cyan transition-colors">
+                {item.name}
+              </Link>
+            )
+          ))}
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
