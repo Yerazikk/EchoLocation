@@ -105,6 +105,7 @@ export const DemoPage = () => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeEvents,   setActiveEvents]   = useState<AudioEvent[]>([]);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [activeClipId,    setActiveClipId]    = useState<string | null>(null);
 
   const clipEndTimeRef    = useRef<number | null>(null);
   const lastTriggeredRef  = useRef<Set<string>>(new Set());
@@ -192,6 +193,7 @@ export const DemoPage = () => {
           const end = clipEndTimeRef.current;
           if (end !== null && prev.currentTime >= end) {
             clipEndTimeRef.current = null;
+            setActiveClipId(null);
             syncAll(end, false);
             // Mute all sidebar videos when clip ends
             Object.values(videoRefsMap.current).forEach(v => { 
@@ -254,6 +256,7 @@ export const DemoPage = () => {
   const resetTimeline = () => {
     syncAll(0, false);
     clipEndTimeRef.current = null;
+    setActiveClipId(null);
     lastTriggeredRef.current.clear();
     setActiveEvents([]);
     setHoveredNode(null);
@@ -284,35 +287,46 @@ export const DemoPage = () => {
   };
 
   const handlePlayClip = (event: AudioEvent) => {
-    console.log(`[AudioDebug] PlayClip triggered for ${event.label} at ${event.timestamp}s`);
     const startTime = Math.max(0, event.timestamp - 1);
     const endTime   = Math.min(TOTAL_DURATION, event.timestamp + 2);
-    clipEndTimeRef.current = endTime;
-    // Preserve all events seen up to now so the log doesn't clear when we jump back
-    CHOREOGRAPHED_EVENTS.forEach(e => {
-      if (e.timestamp <= timeline.currentTime) lastTriggeredRef.current.add(e.id);
-    });
-    isClipJumpRef.current = true;
-    setSelectedNodeId(event.nodeId);
     
-    // Unmute the specified video immediately to satisfy browser requirements for user gesture
-    const v = videoRefsMap.current[event.nodeId];
-    if (v) {
-      v.muted = false;
-      v.volume = 1.0;
-      console.log(`[AudioDebug] Unmuted video for camera: ${event.nodeId}`);
-    }
-
-    // CRITICAL: Synchronously initiate play on all videos to capture the user gesture
-    // This prevents "NotAllowedError" if syncAll() takes too long to seek.
-    Object.values(videoRefsMap.current).forEach(vid => {
-      if (vid instanceof HTMLVideoElement) {
-        vid.play().catch(err => console.debug('[AudioDebug] Sync play error (expected if seeking):', err));
+    const execute = (log: boolean) => {
+      if (log) console.log(`[AudioDebug] PlayClip triggered for ${event.label} at ${event.timestamp}s`);
+      clipEndTimeRef.current = endTime;
+      setActiveClipId(event.id);
+      // Preserve all events seen up to now so the log doesn't clear when we jump back
+      CHOREOGRAPHED_EVENTS.forEach(e => {
+        if (e.timestamp <= timeline.currentTime) lastTriggeredRef.current.add(e.id);
+      });
+      isClipJumpRef.current = true;
+      setSelectedNodeId(event.nodeId);
+      
+      // Unmute the specified video immediately to satisfy browser requirements for user gesture
+      const v = videoRefsMap.current[event.nodeId];
+      if (v) {
+        v.muted = false;
+        v.volume = 1.0;
+        if (log) console.log(`[AudioDebug] Unmuted video for camera: ${event.nodeId}`);
       }
-    });
 
-    syncAll(startTime, true);
-    setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
+      // CRITICAL: Synchronously initiate play on all videos to capture the user gesture
+      // This prevents "NotAllowedError" if syncAll() takes too long to seek.
+      Object.values(videoRefsMap.current).forEach(vid => {
+        if (vid instanceof HTMLVideoElement) {
+          vid.play().catch(err => console.debug('[AudioDebug] Sync play error (expected if seeking):', err));
+        }
+      });
+
+      syncAll(startTime, true);
+      setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
+    };
+
+    // Quick fix: Run twice to ensure state settlement and audio activation
+    execute(true);
+    setTimeout(() => {
+      console.log(`[AudioDebug] Running double-play quick fix...`);
+      execute(false);
+    }, 50);
   };
 
   const formatTime = (seconds: number) => {
@@ -639,7 +653,10 @@ export const DemoPage = () => {
                       transition={{ layout: { duration: 0.3 } }}
                       key={event.id}
                       onClick={() => handleJumpToEvent(event.timestamp)}
-                      className="group flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                      className={`group flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer 
+                        ${activeClipId === event.id && timeline.isPlaying 
+                          ? 'bg-ui-accent/10 border-ui-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]' 
+                          : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}`}
                     >
                       <div className={`w-1 h-10 rounded-full shrink-0
                         ${event.isGunfire ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-ui-accent/40'}`}
@@ -657,10 +674,22 @@ export const DemoPage = () => {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={e => { e.stopPropagation(); handlePlayClip(event); }}
-                            className="p-1.5 rounded-lg transition-all flex items-center gap-2 bg-white/5 text-white/40 hover:bg-ui-accent hover:text-black"
+                            className={`p-1.5 rounded-lg transition-all flex items-center gap-2 
+                              ${activeClipId === event.id && timeline.isPlaying
+                                ? 'bg-ui-accent text-black shadow-[0_0_10px_rgba(0,242,255,0.4)]'
+                                : 'bg-white/5 text-white/40 hover:bg-ui-accent hover:text-black'}`}
                           >
-                            <Play size={10} fill="currentColor" />
-                            <span className="text-[8px] font-bold uppercase tracking-tighter">Play Clip</span>
+                            {activeClipId === event.id && timeline.isPlaying ? (
+                              <>
+                                <Pause size={10} fill="currentColor" />
+                                <span className="text-[8px] font-bold uppercase tracking-tighter">Playing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play size={10} fill="currentColor" />
+                                <span className="text-[8px] font-bold uppercase tracking-tighter">Play Clip</span>
+                              </>
+                            )}
                           </button>
 
                         </div>
