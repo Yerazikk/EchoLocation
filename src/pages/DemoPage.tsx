@@ -44,7 +44,7 @@ const CameraHoverPreview = React.memo(({ src, startTime, isPlaying }: {
         ref={setVideoRef}
         src={src}
         className="absolute inset-0 w-full h-full object-cover"
-        muted
+        muted={!isPlaying}
         playsInline
       />
       <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
