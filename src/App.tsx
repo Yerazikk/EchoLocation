@@ -24,10 +24,11 @@ import { DEFAULT_NODES, TOTAL_DURATION, CHOREOGRAPHED_EVENTS } from './constants
 
 // Isolated, memoized component — never re-renders after mount.
 // startTime is captured once at hover-enter and never changes.
-const CameraHoverPreview = React.memo(({ src, startTime }: {
+const CameraHoverPreview = React.memo(({ src, startTime, isPlaying }: {
   src: string;
   startTime: number;
   nodeName: string;
+  isPlaying: boolean;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPresent] = usePresence();
@@ -37,9 +38,12 @@ const CameraHoverPreview = React.memo(({ src, startTime }: {
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
     (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
     if (!el) return;
-    const play = () => { el.currentTime = startTime; el.play().catch(() => {}); };
-    if (el.readyState >= 1) play();
-    else el.addEventListener('loadedmetadata', play, { once: true });
+    const init = () => {
+      el.currentTime = startTime;
+      if (isPlaying) el.play().catch(() => {});
+    };
+    if (el.readyState >= 1) init();
+    else el.addEventListener('loadedmetadata', init, { once: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mute on exit start, unmute if AnimatePresence re-enters the same instance
@@ -47,8 +51,9 @@ const CameraHoverPreview = React.memo(({ src, startTime }: {
     const video = videoRef.current;
     if (!video) return;
     video.muted = !isPresent;
-    if (isPresent) video.play().catch(() => {});
-  }, [isPresent]);
+    if (isPresent && isPlaying) video.play().catch(() => {});
+    else if (isPresent && !isPlaying) video.pause();
+  }, [isPresent, isPlaying]);
 
   return (
     <div className="aspect-video bg-black relative overflow-hidden">
@@ -212,6 +217,7 @@ export default function App() {
     lastTriggeredRef.current.clear();
     setActiveEvents([]);
     setSignalLostCams(new Set());
+    setHoveredNode(null);
   };
 
   const handleScrub = (e: React.MouseEvent | React.TouchEvent) => {
@@ -479,6 +485,7 @@ export default function App() {
                                   src={VIDEO_MAP[node.id]}
                                   startTime={hoverStartTime.current}
                                   nodeName={node.name}
+                                  isPlaying={timeline.isPlaying}
                                 />
                               )}
                               <div className="p-2 border-t border-ui-border">
