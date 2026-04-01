@@ -355,7 +355,7 @@ export default function App() {
                 {/* Camera Nodes — % positions are relative to the image, not the screen */}
                 <div className="absolute inset-0 z-20">
                   {nodes.map((node) => {
-                    const isDamaged = node.id === 'cam-2';
+                    const isDamaged = false;
                     return (
                     <motion.div
                       key={node.id}
