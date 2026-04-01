@@ -547,6 +547,29 @@ export const DemoPage = () => {
             </div>
           </div>
 
+          {selectedNodeId && (() => {
+            const COORDS: Record<string, { lat: number; lng: number }> = {
+              'cam-1': { lat: 34.40328220756281, lng: -118.56924750237668 },
+              'cam-2': { lat: 34.40328848457708, lng: -118.56907766021114 },
+              'cam-3': { lat: 34.40316721779883, lng: -118.56924646201153 },
+              'cam-4': { lat: 34.402990673406116, lng: -118.56924932307518 },
+            };
+            const coord = COORDS[selectedNodeId];
+            return coord ? (
+              <div className="px-6 py-3 border-b border-ui-border bg-black/30 flex items-center gap-3">
+                <Crosshair size={11} className="text-ui-accent shrink-0" />
+                <div className="flex gap-4">
+                  <span className="text-[9px] font-mono text-white/40 uppercase tracking-wider">
+                    {coord.lat.toFixed(6)}°N
+                  </span>
+                  <span className="text-[9px] font-mono text-white/40 uppercase tracking-wider">
+                    {Math.abs(coord.lng).toFixed(6)}°W
+                  </span>
+                </div>
+              </div>
+            ) : null;
+          })()}
+
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b border-ui-border flex items-center justify-between bg-black/40">
               <div className="flex items-center gap-2">
