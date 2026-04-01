@@ -164,6 +164,7 @@ export default function App() {
     if (currentTime === 0) {
       lastTriggeredRef.current.clear();
       setActiveEvents([]);
+      return;
     }
 
     const now = Date.now();
@@ -400,7 +401,7 @@ export default function App() {
                                   key={event.id}
                                   initial={{ opacity: 0, y: stackOffset + 6, scale: 0.9 }}
                                   animate={{ opacity: [0, 1, 1, 0], y: stackOffset - 38, scale: 1 }}
-                                  exit={{ opacity: 0 }}
+                                  exit={{ opacity: 0, y: -30 }}
                                   transition={{
                                     duration: 3.5,
                                     times: [0, 0.12, 0.65, 1],
