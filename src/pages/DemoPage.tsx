@@ -15,34 +15,17 @@ import {
 import { CameraNode, TimelineState, AudioEvent } from '../types';
 import { DEFAULT_NODES, TOTAL_DURATION, CHOREOGRAPHED_EVENTS } from '../constants';
 
-const CameraHoverPreview = React.memo(({ src, startTime, isPlaying }: {
+const CameraHoverPreview = React.memo(({ src, startTime }: {
   src: string;
   startTime: number;
   nodeName: string;
-  isPlaying: boolean;
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPresent] = usePresence();
-  const [ended, setEnded] = useState(false);
-
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
-    (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
     if (!el) return;
-    const init = () => {
-      el.currentTime = startTime;
-      if (isPlaying) el.play().catch(() => {});
-    };
+    const init = () => { el.currentTime = startTime; };
     if (el.readyState >= 1) init();
     else el.addEventListener('loadedmetadata', init, { once: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !isPresent;
-    if (isPresent && isPlaying) video.play().catch(() => {});
-    else if (isPresent && !isPlaying) video.pause();
-  }, [isPresent, isPlaying]);
 
   return (
     <div className="aspect-video bg-black relative overflow-hidden">
@@ -50,23 +33,14 @@ const CameraHoverPreview = React.memo(({ src, startTime, isPlaying }: {
         ref={setVideoRef}
         src={src}
         className="absolute inset-0 w-full h-full object-cover"
+        muted
         playsInline
-        onEnded={() => setEnded(true)}
       />
-      {ended ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-800 animate-pulse" />
-          <span className="text-[8px] font-mono uppercase tracking-widest text-red-800/80">Signal Lost</span>
-        </div>
-      ) : (
-        <>
-          <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
-          </div>
-          <div className="scanline" />
-        </>
-      )}
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
+      </div>
+      <div className="scanline" />
     </div>
   );
 });
@@ -103,7 +77,6 @@ export const DemoPage = () => {
   const [activeClip, setActiveClip] = useState<{ startTime: number, endTime: number, eventId: string } | null>(null);
 
   const [activeEvents, setActiveEvents] = useState<AudioEvent[]>([]);
-  const [signalLostCams, setSignalLostCams] = useState<Set<string>>(new Set());
   const lastTriggeredRef = useRef<Set<string>>(new Set());
 
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -193,7 +166,6 @@ export const DemoPage = () => {
     setTimeline(prev => ({ ...prev, currentTime: 0, isPlaying: false }));
     lastTriggeredRef.current.clear();
     setActiveEvents([]);
-    setSignalLostCams(new Set());
     setHoveredNode(null);
   };
 
@@ -208,7 +180,6 @@ export const DemoPage = () => {
       if (ev.timestamp <= newTime) lastTriggeredRef.current.add(ev.id);
     });
     setActiveClip(null);
-    setSignalLostCams(new Set());
   };
 
   const handleJumpToEvent = (timestamp: number) => {
@@ -217,7 +188,6 @@ export const DemoPage = () => {
       if (e.timestamp <= timestamp) lastTriggeredRef.current.add(e.id);
     });
     setActiveClip(null);
-    setSignalLostCams(new Set());
   };
 
   const handleExitClip = () => {
@@ -264,7 +234,7 @@ export const DemoPage = () => {
             <h1 className="font-display font-bold tracking-widest text-lg uppercase">Echolocation</h1>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-8 mr-2">
           {[
             { name: 'Overview', path: '/#overview' },
             { name: 'Capabilities', path: '/#capabilities' },
@@ -420,7 +390,6 @@ export const DemoPage = () => {
                                   src={VIDEO_MAP[node.id]}
                                   startTime={hoverStartTime.current}
                                   nodeName={node.name}
-                                  isPlaying={timeline.isPlaying}
                                 />
                               )}
                               <div className="p-2 border-t border-ui-border">
@@ -482,23 +451,19 @@ export const DemoPage = () => {
             `}>
               {selectedNodeId ? (
                 <>
-                  {VIDEO_MAP[selectedNodeId] && !signalLostCams.has(selectedNodeId) && (
+                  {VIDEO_MAP[selectedNodeId] && (
                     <video
                       ref={sidebarVideoRef}
                       key={selectedNodeId}
                       src={VIDEO_MAP[selectedNodeId]}
                       className="absolute inset-0 w-full h-full object-cover"
-                      muted
+                      muted={!activeClip}
                       playsInline
-                      onEnded={() => setSignalLostCams(prev => new Set(prev).add(selectedNodeId!))}
+                      onEnded={() => {
+                        const video = sidebarVideoRef.current;
+                        if (video) { video.currentTime = 0; video.pause(); }
+                      }}
                     />
-                  )}
-
-                  {signalLostCams.has(selectedNodeId) && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-800 animate-pulse" />
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-red-800/80">Signal Lost</span>
-                    </div>
                   )}
 
                   <div className="absolute top-3 left-3 flex flex-col gap-1">

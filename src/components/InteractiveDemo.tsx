@@ -11,7 +11,7 @@ export const InteractiveDemo = () => {
           <div className="font-mono text-xs text-tactical-cyan uppercase tracking-[0.3em] mb-3">Live System</div>
           <h2 className="text-3xl font-bold text-white mb-4">Mission Control Console</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Real-time acoustic intelligence grid with distributed camera satilights, live event detection, and synchronized playback.
+            Real-time acoustic intelligence grid with distributed camera satellites, live event detection, and synchronized playback.
           </p>
         </div>
 

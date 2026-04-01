@@ -90,7 +90,7 @@ export const MVPPage = () => {
                 </div>
                 
                 <p className="text-gray-400 mb-8 max-w-xl leading-relaxed">
-                  Access the initial Alpha build of the EchoLocation tactical framework. This package includes the core acoustic processing engine, satilight communication protocols, and the mission control dashboard source.
+                  Access the initial Alpha build of the EchoLocation tactical framework. This package includes the core acoustic processing engine, satellite communication protocols, and the mission control dashboard source.
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -124,8 +124,8 @@ export const MVPPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { title: "Environment Setup", desc: "Ensure your local network is configured for UDP broadcast and sensor satilight discovery." },
-                  { title: "Satilight Provisioning", desc: "Flash the Alpha firmware to your distributed hardware units using the provided CLI tool." },
+                  { title: "Environment Setup", desc: "Ensure your local network is configured for UDP broadcast and sensor satellite discovery." },
+                  { title: "Satellite Provisioning", desc: "Flash the Alpha firmware to your distributed hardware units using the provided CLI tool." },
                   { title: "Hub Initialization", desc: "Launch the central processing engine on a dedicated workstation with high-gain audio input." },
                   { title: "Dashboard Sync", desc: "Connect the browser-based mission control to the local hub's secure WebSocket endpoint." }
                 ].map((step, i) => (

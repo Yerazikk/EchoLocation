@@ -98,7 +98,7 @@ export const Hero = () => (
             Real-Time Acoustic Intelligence for Critical Incidents
           </h1>
           <p className="text-xl text-gray-400 mb-10 leading-relaxed">
-            EchoLocation transforms distributed sensor satilights into a live situational-awareness grid, surfacing probable gunfire origin, distress events, and incident timelines through a centralized mission control interface.
+            EchoLocation transforms distributed sensor satellites into a live situational-awareness grid, surfacing probable gunfire origin, distress events, and incident timelines through a centralized mission control interface.
           </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/demo" className="px-8 py-4 bg-tactical-cyan text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-all glow-cyan">
@@ -307,7 +307,7 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
 
           <section>
             <h3 className="text-white font-bold uppercase text-xs tracking-widest mb-3">2. Operational Security</h3>
-            <p>Access to the EchoLocation dashboard and sensor satilights is controlled by the deploying organization. We recommend implementing strict network-level security and physical access controls for all hardware satilights.</p>
+            <p>Access to the EchoLocation dashboard and sensor satellites is controlled by the deploying organization. We recommend implementing strict network-level security and physical access controls for all hardware satellites.</p>
           </section>
 
           <section>
