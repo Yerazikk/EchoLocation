@@ -29,12 +29,51 @@ const COORDS: Record<string, { lat: number; lng: number }> = {
   'cam-4': { lat: 34.402990673406116,  lng: -118.56924932307518 },
 };
 
+// ─── Hover preview — muted, synced by parent via ref ────────────────────────
+const CameraHoverPreview = React.memo(({
+  src,
+  registerRef,
+  timelineStateRef,
+}: {
+  src: string;
+  nodeName: string;
+  registerRef: (el: HTMLVideoElement | null) => void;
+  timelineStateRef: React.MutableRefObject<{ currentTime: number; isPlaying: boolean }>;
+}) => {
+  const setRef = useCallback((el: HTMLVideoElement | null) => {
+    registerRef(el);
+    if (!el) return;
+    const init = () => {
+      const { currentTime, isPlaying } = timelineStateRef.current;
+      el.currentTime = currentTime;
+      if (isPlaying) el.play().catch(() => {});
+    };
+    if (el.readyState >= 1) init();
+    else el.addEventListener('loadedmetadata', init, { once: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="aspect-video bg-black relative overflow-hidden">
+      <video ref={setRef} src={src} className="absolute inset-0 w-full h-full object-cover" muted playsInline />
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
+      </div>
+      <div className="scanline" />
+    </div>
+  );
+});
+
 export const DemoPage = () => {
   const [mapImage]   = useState<string | null>('/default-map.png');
   const [mapAspect, setMapAspect] = useState<{ w: number; h: number } | null>(null);
 
   // All 4 video refs — always mounted, always synced
   const videoRefsMap = useRef<Record<string, HTMLVideoElement | null>>({});
+  // Hover preview video ref
+  const hoverVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Always-fresh timeline state for use in callbacks
+  const timelineStateRef = useRef({ currentTime: 0, isPlaying: false });
 
   const showGrid = true;
 
@@ -68,6 +107,11 @@ export const DemoPage = () => {
     return { width: Math.round(MAP_HEIGHT * mapAspect.w / mapAspect.h), height: MAP_HEIGHT };
   }, [mapAspect]);
 
+  // Keep timelineStateRef fresh for use in loadedmetadata callbacks
+  useEffect(() => {
+    timelineStateRef.current = { currentTime: timeline.currentTime, isPlaying: timeline.isPlaying };
+  }, [timeline]);
+
   // ─── Imperative sync — the ONLY place videos are controlled ───────────────
   const syncAll = useCallback((time: number, playing: boolean) => {
     Object.keys(videoRefsMap.current).forEach(id => {
@@ -77,6 +121,13 @@ export const DemoPage = () => {
       if (playing) video.play().catch(() => {});
       else         video.pause();
     });
+    // Also sync hover preview if visible
+    const hv = hoverVideoRef.current;
+    if (hv) {
+      if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time;
+      if (playing) hv.play().catch(() => {});
+      else         hv.pause();
+    }
   }, []);
 
   // ─── Interval timer — advances currentTime only, never touches videos ─────
@@ -276,7 +327,7 @@ export const DemoPage = () => {
                     className="absolute group"
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     onMouseEnter={() => setHoveredNode(node.id)}
-                    onMouseLeave={() => setHoveredNode(null)}
+                    onMouseLeave={() => { setHoveredNode(null); hoverVideoRef.current = null; }}
                   >
                     <div
                       className="relative cursor-pointer -translate-x-1/2 -translate-y-1/2"
@@ -344,6 +395,31 @@ export const DemoPage = () => {
                           {node.name}
                         </span>
                       </div>
+
+                      {/* Hover preview popup */}
+                      <AnimatePresence>
+                        {hoveredNode === node.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none
+                              ${node.y < 50 ? 'top-full mt-8' : 'bottom-full mb-12'}`}
+                          >
+                            {VIDEO_MAP[node.id] && (
+                              <CameraHoverPreview
+                                src={VIDEO_MAP[node.id]}
+                                nodeName={node.name}
+                                registerRef={el => { hoverVideoRef.current = el; }}
+                                timelineStateRef={timelineStateRef}
+                              />
+                            )}
+                            <div className="p-2 border-t border-ui-border">
+                              <span className="text-[9px] font-display font-bold uppercase tracking-widest text-ui-accent">{node.name}</span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </motion.div>
                 ))}
