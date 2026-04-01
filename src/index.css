@@ -2,10 +2,19 @@
 @import "tailwindcss";
 
 @theme {
+  /* Shared */
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
+  /* Marketing site colors */
+  --color-tactical-bg: #050505;
+  --color-tactical-panel: #0a0a0a;
+  --color-tactical-cyan: #00f2ff;
+  --color-tactical-cyan-dim: rgba(0, 242, 255, 0.1);
+  --color-tactical-alert: #ff4400;
+
+  /* Demo app colors */
   --color-ui-bg: #0a0a0c;
   --color-ui-card: #141418;
   --color-ui-accent: #00f2ff;
@@ -15,33 +24,84 @@
 
 @layer base {
   body {
-    @apply bg-ui-bg text-white font-sans antialiased overflow-hidden;
+    @apply bg-tactical-bg text-gray-300 font-sans selection:bg-tactical-cyan selection:text-black;
+  }
+
+  h1, h2, h3, h4, .tactical-label {
+    @apply font-mono uppercase tracking-tighter;
   }
 }
 
+/* ── Marketing site utilities ── */
+.tactical-grid {
+  background-image:
+    linear-gradient(to right, rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+}
+
+.border-tactical {
+  @apply border border-tactical-cyan/20;
+}
+
+.click-ping {
+  position: fixed;
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: click-ping-expand 1.5s cubic-bezier(0, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes click-ping-expand {
+  0% { width: 0; height: 0; opacity: 0.6; border-width: 1px; }
+  100% { width: 80px; height: 80px; opacity: 0; border-width: 0.5px; }
+}
+
+.sonar-ping {
+  position: absolute;
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  border-radius: 50%;
+  animation: ping-expand 4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes ping-expand {
+  0% { width: 0; height: 0; opacity: 0.8; border-width: 2px; }
+  100% { width: 200vw; height: 200vw; opacity: 0; border-width: 1px; }
+}
+
+/* ── Demo app utilities ── */
 .grid-lines {
   background-image:
     linear-gradient(to right, rgba(0, 242, 255, 0.15) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 242, 255, 0.15) 1px, transparent 1px),
     linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  /* % sizes = fixed cell count (10×10 major, 50×50 minor) regardless of rendered size */
   background-size: 10% 10%, 10% 10%, 2% 2%, 2% 2%;
 }
 
+/* ── Shared scanline (used in both) ── */
 .scanline {
   width: 100%;
   height: 2px;
-  background: rgba(0, 242, 255, 0.1);
+  background: linear-gradient(to right, transparent, rgba(0, 242, 255, 0.2), transparent);
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: none;
   animation: scan 4s linear infinite;
+  pointer-events: none;
 }
 
 @keyframes scan {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100%); }
+  0% { transform: translateY(0); opacity: 0.3; }
+  58% { transform: translateY(58vh); opacity: 0.3; }
+  60% { transform: translateY(60vh); opacity: 1; background: linear-gradient(to right, transparent, #00f2ff, transparent); box-shadow: 0 0 20px rgba(0, 242, 255, 0.8); }
+  62% { transform: translateY(62vh); opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0.3; }
 }
-
