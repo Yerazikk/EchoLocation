@@ -87,7 +87,7 @@ export const Navbar = () => (
 export const Hero = () => (
   <section id="overview" className="relative pt-32 pb-20 overflow-hidden min-h-[100vh] flex items-center tactical-grid">
     <div className="scanline" />
-    <div className="px-8 sm:px-12 lg:px-16 relative z-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div className="max-w-3xl">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
