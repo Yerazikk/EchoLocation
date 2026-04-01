@@ -38,11 +38,11 @@ const BarWaveform = ({ audioData }: { audioData: number[] }) => (
       <motion.div
         key={i}
         animate={{ 
-          height: `${Math.max(12, value * 100)}%`,
+          height: `${Math.max(6, value * 100)}%`,
           backgroundColor: value > 0.5 ? 'rgba(0, 242, 255, 1)' : 'rgba(0, 242, 255, 0.6)'
         }}
         transition={{ type: "spring", stiffness: 800, damping: 40, mass: 0.5 }}
-        className="w-[2px] rounded-full shadow-[0_0_12px_rgba(0, 242, 255, 0.4)]"
+        className="w-[2px] rounded-full shadow-[0_0_12px_rgba(0,242,255,0.4)]"
       />
     ))}
   </div>
@@ -154,7 +154,7 @@ export const ResponderMobile = () => {
         source = audioContext.createMediaStreamSource(audioStream);
         source.connect(analyzer);
         
-        analyzer.fftSize = 256; // Increased for better resolution
+        analyzer.fftSize = 256; 
         const bufferLength = analyzer.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
@@ -166,7 +166,6 @@ export const ResponderMobile = () => {
           
           analyzer.getByteFrequencyData(dataArray);
           
-          // Reduced sensitivity for a smoother look (0.8x multiplier)
           const rawData = Array.from(dataArray.slice(0, 48)).map(v => (v / 255) * 0.8);
           
           const centeredData = new Array(48);
@@ -205,22 +204,29 @@ export const ResponderMobile = () => {
     };
   }, [audioStream, isMonitoring]);
 
-  // Gemini-powered transcription
+  // Gemini-powered transcription (Zero-Gap Continuous Loop)
   useEffect(() => {
     // @ts-ignore
     if (!import.meta.env.VITE_GEMINI_API_KEY || !genAI || !isMonitoring || !audioStream) return;
 
     let mediaRecorder: MediaRecorder | null = null;
-    let recordingInterval: NodeJS.Timeout | null = null;
+    let isActive = true;
 
-    const recordChunk = () => {
-      if (!audioStream || audioStream.getTracks().length === 0) return;
+    const recordNextChunk = () => {
+      if (!isActive || !isMonitoring || !audioStream) return;
       
       mediaRecorder = new MediaRecorder(audioStream);
       const chunks: Blob[] = [];
 
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
       mediaRecorder.onstop = async () => {
+        // Start next recording IMMEDIATELY to prevent audio loss
+        if (isActive && isMonitoring) recordNextChunk();
+        
+        if (chunks.length === 0) return;
         const blob = new Blob(chunks, { type: 'audio/webm' });
         
         const reader = new FileReader();
@@ -235,13 +241,13 @@ export const ResponderMobile = () => {
                 role: 'user',
                 parts: [
                   { inlineData: { data: base64Data, mimeType: "audio/webm" } },
-                  { text: "Return ONLY the transcript of this English audio snippet (3 seconds). If no English speech is clear, return nothing. No punctuation or extra text." }
+                  { text: "Return ONLY the transcript of this English audio snippet. The audio is from a tactical emergency responder headset. Use context to infer words if the audio is slightly clipped. If no speech is clear, return nothing. No punctuation or extra text." }
                 ]
               }]
             });
 
             const text = result.text.trim();
-            if (text) {
+            if (text && text.length > 2) { 
               setTranscriptionLines([text]);
             }
           } catch (err) {
@@ -251,16 +257,19 @@ export const ResponderMobile = () => {
       };
 
       mediaRecorder.start();
+      
+      // Send chunks every 4 seconds
       setTimeout(() => {
-        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
-      }, 3000); 
+        if (mediaRecorder?.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, 4000);
     };
 
-    recordChunk();
-    recordingInterval = setInterval(recordChunk, 4000);
+    recordNextChunk();
 
     return () => {
-      if (recordingInterval) clearInterval(recordingInterval);
+      isActive = false;
       if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
     };
   }, [audioStream, isMonitoring, genAI]);
@@ -287,10 +296,10 @@ export const ResponderMobile = () => {
   };
 
   return (
-    <div className="relative w-full max-w-[360px] aspect-[9/19] bg-ui-card rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border-[10px] border-zinc-900 overflow-hidden flex flex-col ring-1 ring-white/5 mx-auto">
+    <div className="relative w-full max-w-[320px] aspect-[9/19] bg-ui-card rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border-[8px] border-zinc-900 overflow-hidden flex flex-col ring-1 ring-white/5 mx-auto">
       
       {/* Notch */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-zinc-900 rounded-b-3xl z-50 flex items-center justify-center">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-zinc-900 rounded-b-2xl z-50 flex items-center justify-center">
         <div className="w-10 h-1 bg-zinc-800 rounded-full" />
       </div>
 
@@ -440,12 +449,12 @@ export const ResponderMobile = () => {
               type="text" 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend(e)}
               placeholder="Type message..."
               className="w-full h-8 bg-black/40 border border-white/5 rounded-sm px-4 text-[11px] text-white placeholder:text-white/10 focus:outline-none focus:border-ui-accent/40 transition-all font-sans"
             />
             <button 
-              onClick={handleSend}
+              onClick={(e) => handleSend(e)}
               className={`absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-sm flex items-center justify-center transition-all ${
                 inputText.trim() ? 'bg-ui-accent text-black shadow-[0_0_20px_rgba(0,242,255,0.3)]' : 'bg-white/5 text-white/10'
               }`}
