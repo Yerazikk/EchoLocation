@@ -248,7 +248,10 @@ export const ResponderMobile = () => {
 
             const text = result.text.trim();
             if (text && text.length > 2) { 
-              setTranscriptionLines([text]);
+              setTranscriptionLines(prev => {
+                const newLines = [...prev, text];
+                return newLines.slice(-2);
+              });
             }
           } catch (err) {
             console.error("Gemini Transcription Error:", err);
@@ -405,18 +408,18 @@ export const ResponderMobile = () => {
         </div>
 
         {/* Transcription Strip */}
-        <div className="w-full -mt-2 z-10">
+        <div className="w-full -mt-2 z-10 transition-all duration-300">
           {transcriptionLines.length > 0 ? (
-            <div className="px-1.5 py-1 bg-ui-accent/5 border-l-2 border-ui-accent/30 overflow-hidden min-h-6 flex flex-col justify-center animate-in fade-in slide-in-from-left-2 duration-500">
+            <div className="px-1.5 py-1 bg-ui-accent/5 border-l-2 border-ui-accent/30 overflow-hidden min-h-[40px] flex flex-col justify-center animate-in fade-in slide-in-from-left-2 duration-500">
               {transcriptionLines.map((line, i) => (
-                <p key={i} className="text-[9px] font-mono text-ui-accent/90 italic leading-tight truncate uppercase tracking-tight">
+                <p key={i} className={`text-[9px] font-mono italic leading-tight truncate uppercase tracking-tight ${i === 1 ? 'text-ui-accent/90' : 'text-ui-accent/40'}`}>
                   <span className="opacity-40 mr-2">≫</span>
                   {line}
                 </p>
               ))}
             </div>
           ) : (
-            <div className="px-1.5 py-1 min-h-6 flex items-center gap-2 opacity-20">
+            <div className="px-1.5 py-1 min-h-[40px] flex items-center gap-2 opacity-20">
               <Terminal size={8} />
               <span className="text-[8px] font-mono uppercase tracking-widest">Waiting for signal...</span>
             </div>
