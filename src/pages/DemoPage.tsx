@@ -302,14 +302,6 @@ export const DemoPage = () => {
                       style={{ left: `${node.x}%`, top: `${node.y}%` }}
                       onMouseEnter={() => { if (!isDamaged) { hoverStartTime.current = timeline.currentTime; setHoveredNode(node.id); } }}
                       onMouseLeave={() => setHoveredNode(null)}
-                      onPan={(e, info) => {
-                        if (!showGrid || !mapContainerRef.current) return;
-                        const rect = mapContainerRef.current.getBoundingClientRect();
-                        const x = ((info.point.x - rect.left) / rect.width) * 100;
-                        const y = ((info.point.y - rect.top) / rect.height) * 100;
-                        updateNodePos(node.id, 'x', Math.max(0, Math.min(100, Number(x.toFixed(2)))));
-                        updateNodePos(node.id, 'y', Math.max(0, Math.min(100, Number(y.toFixed(2)))));
-                      }}
                     >
                       <div
                         className="relative cursor-pointer -translate-x-1/2 -translate-y-1/2"
@@ -366,9 +358,7 @@ export const DemoPage = () => {
                         <motion.div
                           animate={{
                             scale: (hoveredNode === node.id || selectedNodeId === node.id) ? 1.2 : 1,
-                            cursor: showGrid ? 'grab' : 'pointer'
                           }}
-                          whileTap={{ cursor: showGrid ? 'grabbing' : 'pointer' }}
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
                             ${isDamaged
                               ? 'bg-black/80 border-red-800 text-red-800 opacity-60'
