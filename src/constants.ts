@@ -38,6 +38,7 @@ export const CHOREOGRAPHED_EVENTS = [
   { id: 'c2-02', nodeId: 'cam-2', label: '"I hate this school!"', timestamp: 5 },
   { id: 'c2-03', nodeId: 'cam-2', label: 'Screaming (Faint)', timestamp: 8 },
   { id: 'c2-04', nodeId: 'cam-2', label: '"You\'re all gonna fucking pay!"', timestamp: 12 },
+  { id: 'c2-04b', nodeId: 'cam-2', label: 'Gunshots (Faint)', timestamp: 9, isGunfire: true },
   { id: 'c2-05', nodeId: 'cam-2', label: 'Gunshots', timestamp: 15, isGunfire: true },
   { id: 'c2-06', nodeId: 'cam-2', label: '"I\'ll kill you all!"', timestamp: 17 },
   { id: 'c2-07', nodeId: 'cam-2', label: '"I see you in there!"', timestamp: 21 },
