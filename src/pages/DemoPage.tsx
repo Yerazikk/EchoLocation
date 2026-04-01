@@ -8,9 +8,7 @@ import {
   Grid,
   Camera,
   CameraOff,
-  Upload,
   Activity,
-  Settings2,
   Crosshair,
   ArrowLeft
 } from 'lucide-react';
@@ -87,7 +85,7 @@ export const DemoPage = () => {
   const sidebarVideoRef = useRef<HTMLVideoElement>(null);
   const hoverStartTime = useRef(0);
   const [showGrid, setShowGrid] = useState(true);
-  const [showAudioEvents, setShowAudioEvents] = useState(true);
+
   const [nodes, setNodes] = useState<CameraNode[]>(() => {
     try {
       const saved = localStorage.getItem('echolocation-nodes');
@@ -103,7 +101,7 @@ export const DemoPage = () => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeClip, setActiveClip] = useState<{ startTime: number, endTime: number, eventId: string } | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const [activeEvents, setActiveEvents] = useState<AudioEvent[]>([]);
   const [signalLostCams, setSignalLostCams] = useState<Set<string>>(new Set());
   const lastTriggeredRef = useRef<Set<string>>(new Set());
@@ -242,17 +240,6 @@ export const DemoPage = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
   };
 
-  const handleMapUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setMapAspect(null);
-        setMapImage(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const updateNodePos = (id: string, axis: 'x' | 'y', val: number) => {
     setNodes(prev => {
@@ -289,26 +276,6 @@ export const DemoPage = () => {
             <span className="text-xs font-mono uppercase tracking-wider">Grid</span>
           </button>
 
-          <button
-            onClick={() => setShowAudioEvents(!showAudioEvents)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded border transition-all duration-300 ${showAudioEvents ? 'bg-ui-accent/10 border-ui-accent text-ui-accent' : 'border-ui-border text-white/40 hover:text-white'}`}
-          >
-            <Activity size={16} />
-            <span className="text-xs font-mono uppercase tracking-wider">Events</span>
-          </button>
-
-          <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded border border-ui-border text-white/40 hover:text-white hover:border-white/20 transition-all">
-            <Upload size={16} />
-            <span className="text-xs font-mono uppercase tracking-wider">Map</span>
-            <input type="file" className="hidden" onChange={handleMapUpload} accept="image/*" />
-          </label>
-
-          <button
-            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className={`p-2 rounded border transition-all ${isSettingsOpen ? 'bg-white text-black border-white' : 'border-ui-border text-white/40 hover:text-white'}`}
-          >
-            <Settings2 size={18} />
-          </button>
         </div>
       </header>
 
@@ -365,7 +332,7 @@ export const DemoPage = () => {
                       >
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 pointer-events-none z-50 w-64 flex flex-col items-center">
                           <AnimatePresence mode="popLayout">
-                            {showAudioEvents && activeEvents
+                            {activeEvents
                               .filter(e => e.nodeId === node.id)
                               .map((event) => {
                                 const isFaint = event.label.includes('(Faint)');
@@ -480,16 +447,6 @@ export const DemoPage = () => {
                   >
                     <Grid size={18} />
                   </button>
-                  <label className="p-3 rounded-lg border bg-ui-card border-ui-border text-white/60 hover:text-white cursor-pointer transition-all shadow-lg">
-                    <Upload size={18} />
-                    <input type="file" className="hidden" onChange={handleMapUpload} accept="image/*" />
-                  </label>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsSettingsOpen(true); }}
-                    className="p-3 rounded-lg border bg-ui-card border-ui-border text-white/60 hover:text-white transition-all shadow-lg"
-                  >
-                    <Settings2 size={18} />
-                  </button>
                 </div>
 
                 <div className="absolute bottom-6 left-6 z-40 bg-ui-card/80 backdrop-blur-md border border-ui-border rounded-lg p-3 flex items-center gap-6 shadow-2xl">
@@ -503,12 +460,7 @@ export const DemoPage = () => {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/10 border-2 border-dashed border-white/5 m-12 rounded-xl">
-                <Upload size={48} className="mb-4" />
-                <p className="text-xs font-mono uppercase tracking-widest">Upload Blueprint Image</p>
-              </div>
-            )}
+            ) : null}
           </div>
         </main>
 
