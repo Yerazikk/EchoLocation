@@ -15,17 +15,28 @@ import {
 import { CameraNode, TimelineState, AudioEvent } from '../types';
 import { DEFAULT_NODES, TOTAL_DURATION, CHOREOGRAPHED_EVENTS } from '../constants';
 
-const CameraHoverPreview = React.memo(({ src, startTime }: {
+const CameraHoverPreview = React.memo(({ src, startTime, isPlaying }: {
   src: string;
   startTime: number;
   nodeName: string;
+  isPlaying: boolean;
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
     if (!el) return;
     const init = () => { el.currentTime = startTime; };
     if (el.readyState >= 1) init();
     else el.addEventListener('loadedmetadata', init, { once: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isPlaying) video.play().catch(() => {});
+    else video.pause();
+  }, [isPlaying]);
 
   return (
     <div className="aspect-video bg-black relative overflow-hidden">
@@ -74,9 +85,8 @@ export const DemoPage = () => {
   });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [activeClip, setActiveClip] = useState<{ startTime: number, endTime: number, eventId: string } | null>(null);
-
   const [activeEvents, setActiveEvents] = useState<AudioEvent[]>([]);
+  const clipEndTimeRef = useRef<number | null>(null);
   const lastTriggeredRef = useRef<Set<string>>(new Set());
 
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -96,9 +106,10 @@ export const DemoPage = () => {
           if (prev.currentTime >= prev.duration) {
             return { ...prev, isPlaying: false, currentTime: prev.duration };
           }
-          if (activeClip && prev.currentTime >= activeClip.endTime) {
-            setActiveClip(null);
-            return { ...prev, isPlaying: false, currentTime: activeClip.endTime };
+          const endTime = clipEndTimeRef.current;
+          if (endTime !== null && prev.currentTime >= endTime) {
+            clipEndTimeRef.current = null;
+            return { ...prev, isPlaying: false, currentTime: endTime };
           }
           return { ...prev, currentTime: prev.currentTime + 0.1 };
         });
@@ -109,7 +120,7 @@ export const DemoPage = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [timeline.isPlaying, activeClip]);
+  }, [timeline.isPlaying]);
 
   useEffect(() => {
     const currentTime = timeline.currentTime;
@@ -172,6 +183,7 @@ export const DemoPage = () => {
   const resetTimeline = () => {
     setTimeline(prev => ({ ...prev, currentTime: 0, isPlaying: false }));
     lastTriggeredRef.current.clear();
+    clipEndTimeRef.current = null;
     setActiveEvents([]);
     setHoveredNode(null);
   };
@@ -186,7 +198,7 @@ export const DemoPage = () => {
     CHOREOGRAPHED_EVENTS.forEach(ev => {
       if (ev.timestamp <= newTime) lastTriggeredRef.current.add(ev.id);
     });
-    setActiveClip(null);
+    clipEndTimeRef.current = null;
   };
 
   const handleJumpToEvent = (timestamp: number) => {
@@ -194,20 +206,15 @@ export const DemoPage = () => {
     CHOREOGRAPHED_EVENTS.forEach(e => {
       if (e.timestamp <= timestamp) lastTriggeredRef.current.add(e.id);
     });
-    setActiveClip(null);
-  };
-
-  const handleExitClip = () => {
-    setActiveClip(null);
-    setTimeline(prev => ({ ...prev, isPlaying: false }));
+    clipEndTimeRef.current = null;
   };
 
   const handlePlayClip = (event: AudioEvent) => {
     const startTime = Math.max(0, event.timestamp - 3);
     const endTime = Math.min(TOTAL_DURATION, event.timestamp + 5);
+    clipEndTimeRef.current = endTime;
     setSelectedNodeId(event.nodeId);
     setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
-    setActiveClip({ startTime, endTime, eventId: event.id });
     lastTriggeredRef.current.add(event.id);
   };
 
@@ -398,6 +405,7 @@ export const DemoPage = () => {
                                   src={VIDEO_MAP[node.id]}
                                   startTime={hoverStartTime.current}
                                   nodeName={node.name}
+                                  isPlaying={timeline.isPlaying}
                                 />
                               )}
                               <div className="p-2 border-t border-ui-border">
@@ -432,31 +440,19 @@ export const DemoPage = () => {
           <div className="p-6 border-b border-ui-border bg-black/20">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${activeClip ? 'bg-orange-500' : 'bg-ui-accent'} animate-pulse`} />
+                <div className="w-1.5 h-1.5 rounded-full bg-ui-accent animate-pulse" />
                 <h2 className="text-[10px] font-display font-bold uppercase tracking-[0.2em] text-white/80">
-                  {activeClip ? 'Clip Review' : 'Live Intelligence'}
+                  Live Intelligence
                 </h2>
               </div>
-              <div className="flex items-center gap-2">
-                {activeClip && (
-                  <button
-                    onClick={handleExitClip}
-                    className="text-[8px] font-mono bg-orange-500/10 text-orange-500 px-2 py-1 rounded border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-tighter"
-                  >
-                    Exit Review
-                  </button>
-                )}
-                {selectedNodeId && (
-                  <span className="text-[9px] font-mono bg-white/5 text-white/60 px-2 py-0.5 rounded border border-white/10">
-                    {nodes.find(n => n.id === selectedNodeId)?.name}
-                  </span>
-                )}
-              </div>
+              {selectedNodeId && (
+                <span className="text-[9px] font-mono bg-white/5 text-white/60 px-2 py-0.5 rounded border border-white/10">
+                  {nodes.find(n => n.id === selectedNodeId)?.name}
+                </span>
+              )}
             </div>
 
-            <div className={`aspect-video bg-black rounded-lg border transition-all duration-500 relative overflow-hidden group shadow-2xl
-              ${activeClip ? 'border-orange-500/50 shadow-orange-500/10' : 'border-white/5'}
-            `}>
+            <div className="aspect-video bg-black rounded-lg border border-white/5 relative overflow-hidden group shadow-2xl">
               {selectedNodeId ? (
                 <>
                   {VIDEO_MAP[selectedNodeId] && (
@@ -465,7 +461,7 @@ export const DemoPage = () => {
                       key={selectedNodeId}
                       src={VIDEO_MAP[selectedNodeId]}
                       className="absolute inset-0 w-full h-full object-cover"
-                      muted={!activeClip}
+                      muted={false}
                       playsInline
                       onEnded={() => {
                         const video = sidebarVideoRef.current;
@@ -474,40 +470,19 @@ export const DemoPage = () => {
                     />
                   )}
 
-                  <div className="absolute top-3 left-3 flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${activeClip ? 'bg-orange-500' : 'bg-red-500'} animate-pulse shadow-lg`} />
-                      <span className="text-[9px] font-mono uppercase tracking-tighter text-white/80">
-                        {activeClip ? 'Clip Playback' : 'Stream Active'}
-                      </span>
-                    </div>
-                    {activeClip && (
-                      <div className="text-[8px] font-mono text-orange-500/80 uppercase tracking-tighter">
-                        Window: {formatTime(activeClip.startTime)} - {formatTime(activeClip.endTime)}
-                      </div>
-                    )}
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-lg" />
+                    <span className="text-[9px] font-mono uppercase tracking-tighter text-white/80">Stream Active</span>
                   </div>
 
                   <div className="absolute bottom-3 right-3 text-[10px] font-mono text-white/40 bg-black/40 px-2 py-1 rounded backdrop-blur-sm border border-white/5">
                     {formatTime(timeline.currentTime)}
                   </div>
 
-                  {activeClip && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${((timeline.currentTime - activeClip.startTime) / (activeClip.endTime - activeClip.startTime)) * 100}%`
-                        }}
-                        className="h-full bg-orange-500"
-                      />
-                    </div>
-                  )}
-
                   <div className="scanline opacity-30" />
-                  <div className={`absolute inset-0 border pointer-events-none transition-colors ${activeClip ? 'border-orange-500/20' : 'border-ui-accent/10'}`} />
+                  <div className="absolute inset-0 border border-ui-accent/10 pointer-events-none" />
                   <div className="absolute top-3 right-3">
-                    <Crosshair size={14} className={`${activeClip ? 'text-orange-500/40' : 'text-ui-accent/40'}`} />
+                    <Crosshair size={14} className="text-ui-accent/40" />
                   </div>
                 </>
               ) : (
@@ -576,11 +551,7 @@ export const DemoPage = () => {
                         animate={{ opacity: 1, x: 0 }}
                         key={event.id}
                         onClick={() => handleJumpToEvent(event.timestamp)}
-                        className={`group flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden
-                          ${activeClip?.eventId === event.id
-                            ? 'bg-orange-500/10 border-orange-500/30'
-                            : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                          }`}
+                        className="group flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
                       >
                         <div className={`w-1 h-10 rounded-full shrink-0 ${event.isGunfire ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-ui-accent/40'}`} />
 
@@ -599,27 +570,15 @@ export const DemoPage = () => {
                                 e.stopPropagation();
                                 handlePlayClip(event);
                               }}
-                              className={`p-1.5 rounded-lg transition-all flex items-center gap-2
-                                ${activeClip?.eventId === event.id
-                                  ? 'bg-orange-500 text-white'
-                                  : 'bg-white/5 text-white/40 hover:bg-ui-accent hover:text-black'
-                                }`}
+                              className="p-1.5 rounded-lg transition-all flex items-center gap-2 bg-white/5 text-white/40 hover:bg-ui-accent hover:text-black"
                             >
-                              {activeClip?.eventId === event.id ? <Pause size={10} fill="currentColor" /> : <Play size={10} fill="currentColor" />}
-                              <span className="text-[8px] font-bold uppercase tracking-tighter">
-                                {activeClip?.eventId === event.id ? 'Playing' : 'Play Clip'}
-                              </span>
+                              <Play size={10} fill="currentColor" />
+                              <span className="text-[8px] font-bold uppercase tracking-tighter">Play Clip</span>
                             </button>
                             <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">8s Window</span>
                           </div>
                         </div>
 
-                        {activeClip?.eventId === event.id && (
-                          <motion.div
-                            layoutId="active-indicator"
-                            className="absolute right-0 top-0 bottom-0 w-1 bg-orange-500"
-                          />
-                        )}
                       </motion.div>
                     ))
                   ) : (
