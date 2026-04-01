@@ -91,7 +91,7 @@ export const ResponderMobile = () => {
   }, []);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(true);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [messages, setMessages] = useState([
     { id: 1, text: "Oh god, they're in the hallway. I can hear them. Please tell me you're close. We're in room 302.", time: '09:41:02', status: 'read' as const },
