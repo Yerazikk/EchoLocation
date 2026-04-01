@@ -159,25 +159,23 @@ export const DemoPage = () => {
     }
   }, [timeline.currentTime]);
 
+  // Always-fresh ref so loadedmetadata callbacks never use stale state
+  const timelineStateRef = useRef(timeline);
+  useEffect(() => { timelineStateRef.current = timeline; }, [timeline]);
+
+  // Sync effect — only fires on play/pause toggle or camera switch, NOT every tick
   useEffect(() => {
     const video = sidebarVideoRef.current;
     if (!video) return;
-    const sync = () => {
-      if (Math.abs(video.currentTime - timeline.currentTime) > 0.3) {
-        video.currentTime = timeline.currentTime;
-      }
-      if (timeline.isPlaying) {
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
+    const doSync = () => {
+      const { currentTime, isPlaying } = timelineStateRef.current;
+      video.currentTime = currentTime;
+      if (isPlaying) video.play().catch(() => {});
+      else video.pause();
     };
-    if (video.readyState >= 1) {
-      sync();
-    } else {
-      video.addEventListener('loadedmetadata', sync, { once: true });
-    }
-  }, [timeline.isPlaying, timeline.currentTime, selectedNodeId]);
+    if (video.readyState >= 1) doSync();
+    else video.addEventListener('loadedmetadata', doSync, { once: true });
+  }, [timeline.isPlaying, selectedNodeId]); // ← no currentTime dep
 
   const togglePlay = () => setTimeline(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   const resetTimeline = () => {
@@ -199,6 +197,8 @@ export const DemoPage = () => {
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const pos = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
     const newTime = pos * timeline.duration;
+    const video = sidebarVideoRef.current;
+    if (video) video.currentTime = newTime;
     setTimeline(prev => ({ ...prev, currentTime: newTime }));
     CHOREOGRAPHED_EVENTS.forEach(ev => {
       if (ev.timestamp <= newTime) lastTriggeredRef.current.add(ev.id);
@@ -207,6 +207,8 @@ export const DemoPage = () => {
   };
 
   const handleJumpToEvent = (timestamp: number) => {
+    const video = sidebarVideoRef.current;
+    if (video) video.currentTime = timestamp;
     setTimeline(prev => ({ ...prev, currentTime: timestamp }));
     CHOREOGRAPHED_EVENTS.forEach(e => {
       if (e.timestamp <= timestamp) lastTriggeredRef.current.add(e.id);
@@ -218,9 +220,20 @@ export const DemoPage = () => {
     const startTime = Math.max(0, event.timestamp - 3);
     const endTime = Math.min(TOTAL_DURATION, event.timestamp + 5);
     clipEndTimeRef.current = endTime;
-    setSelectedNodeId(event.nodeId);
-    setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
     lastTriggeredRef.current.add(event.id);
+    setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
+
+    if (selectedNodeId === event.nodeId) {
+      // Camera already mounted — seek and play directly
+      const video = sidebarVideoRef.current;
+      if (video) {
+        video.currentTime = startTime;
+        video.play().catch(() => {});
+      }
+    } else {
+      // Camera switch — sync effect will seek once loadedmetadata fires
+      setSelectedNodeId(event.nodeId);
+    }
   };
 
   const formatTime = (seconds: number) => {
