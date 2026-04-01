@@ -5,7 +5,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Grid,
   Camera,
   CameraOff,
   Activity,
@@ -84,7 +83,7 @@ export const DemoPage = () => {
 
   const sidebarVideoRef = useRef<HTMLVideoElement>(null);
   const hoverStartTime = useRef(0);
-  const [showGrid, setShowGrid] = useState(true);
+  const showGrid = true;
 
   const [nodes, setNodes] = useState<CameraNode[]>(() => {
     try {
@@ -267,16 +266,6 @@ export const DemoPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowGrid(!showGrid)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded border transition-all duration-300 ${showGrid ? 'bg-ui-accent/10 border-ui-accent text-ui-accent' : 'border-ui-border text-white/40 hover:text-white'}`}
-          >
-            <Grid size={16} />
-            <span className="text-xs font-mono uppercase tracking-wider">Grid</span>
-          </button>
-
-        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -439,15 +428,6 @@ export const DemoPage = () => {
                   )})}
                 </div>
 
-                <div className="absolute top-6 right-6 flex flex-col gap-3 z-40">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowGrid(!showGrid); }}
-                    className={`p-3 rounded-lg border transition-all ${showGrid ? 'bg-ui-accent border-ui-accent text-black shadow-lg shadow-ui-accent/20' : 'bg-ui-card border-ui-border text-white/60 hover:text-white'}`}
-                    title="Toggle Grid"
-                  >
-                    <Grid size={18} />
-                  </button>
-                </div>
 
                 <div className="absolute bottom-6 left-6 z-40 bg-ui-card/80 backdrop-blur-md border border-ui-border rounded-lg p-3 flex items-center gap-6 shadow-2xl">
                   <div className="flex items-center gap-2">
