@@ -181,6 +181,11 @@ export const DemoPage = () => {
 
   const togglePlay = () => setTimeline(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   const resetTimeline = () => {
+    const video = sidebarVideoRef.current;
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
     setTimeline(prev => ({ ...prev, currentTime: 0, isPlaying: false }));
     lastTriggeredRef.current.clear();
     clipEndTimeRef.current = null;
