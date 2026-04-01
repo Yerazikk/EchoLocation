@@ -101,12 +101,12 @@ export const Hero = () => (
             EchoLocation transforms distributed sensor satilights into a live situational-awareness grid, surfacing probable gunfire origin, distress events, and incident timelines through a centralized mission control interface.
           </p>
           <div className="flex flex-wrap gap-4">
-            <a href="#demo" className="px-8 py-4 bg-tactical-cyan text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-all glow-cyan">
+            <Link to="/demo" className="px-8 py-4 bg-tactical-cyan text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-all glow-cyan">
               View Demo
-            </a>
-            <a href="#mvp" className="px-8 py-4 border border-tactical-cyan/30 text-tactical-cyan font-mono text-xs font-bold uppercase tracking-widest hover:bg-tactical-cyan/10 transition-all">
+            </Link>
+            <Link to="/mvp" className="px-8 py-4 border border-tactical-cyan/30 text-tactical-cyan font-mono text-xs font-bold uppercase tracking-widest hover:bg-tactical-cyan/10 transition-all">
               Local Deployment MVP
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>
