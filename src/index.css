@@ -105,3 +105,17 @@
   62% { transform: translateY(62vh); opacity: 0.3; }
   100% { transform: translateY(100vh); opacity: 0.3; }
 }
+
+/* ── Mobile Prototype Utilities ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 255, 0.1);
+  border-radius: 10px;
+}

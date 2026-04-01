@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Zap, Network, Lock, Activity, Crosshair, X, ArrowRight, Volume2, Waves } from 'lucide-react';
+import { ResponderMobile } from './ResponderMobile';
 
 // Static heights for 5 bars — fixed random-looking values
 const BAR_HEIGHTS = [0.5, 0.9, 0.65, 1.0, 0.4];
@@ -37,17 +38,17 @@ export const Navbar = () => (
             { name: 'Contact', path: '/#contact' }
           ].map((item) => (
             item.path.startsWith('/#') ? (
-              <a 
-                key={item.name} 
-                href={item.path} 
+              <a
+                key={item.name}
+                href={item.path}
                 className="font-mono text-[11px] uppercase tracking-widest text-gray-400 hover:text-tactical-cyan transition-colors"
               >
                 {item.name}
               </a>
             ) : (
-              <Link 
-                key={item.name} 
-                to={item.path} 
+              <Link
+                key={item.name}
+                to={item.path}
                 className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-gray-400 hover:text-tactical-cyan transition-colors"
               >
                 {item.name} {item.icon && <item.icon className="w-3 h-3" />}
@@ -64,18 +65,17 @@ export const Hero = () => (
   <section id="overview" className="relative pt-32 pb-20 overflow-hidden min-h-[100vh] flex items-center tactical-grid">
     <div className="scanline" />
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div className="max-w-3xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
         >
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-[0.9]">
-            Real-Time Acoustic Intelligence for Critical Incidents
+            Real-Time Audio Intelligence for Critical Incidents
           </h1>
           <p className="text-xl text-gray-400 mb-10 leading-relaxed">
-            EchoLocation transforms distributed sensor satellites into a live situational-awareness grid, surfacing probable gunfire origin, distress events, and incident timelines through a centralized mission control interface.
-          </p>
+            EchoLocation turns distributed sensor satellites into a real-time awareness grid, identifying likely gunfire sources, distress events, and timelines in a central mission control interface.          </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/demo" className="px-8 py-4 bg-tactical-cyan text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-all glow-cyan">
               View Demo
@@ -84,6 +84,16 @@ export const Hero = () => (
               Early Access
             </Link>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, x: 20 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="hidden lg:block relative"
+        >
+          <div className="absolute inset-0 bg-tactical-cyan/5 blur-[100px] rounded-full pointer-events-none" />
+          <ResponderMobile />
         </motion.div>
       </div>
     </div>
@@ -94,17 +104,17 @@ export const Problem = () => (
   <section className="py-20 border-y border-tactical-cyan/10 relative overflow-hidden">
     <div className="absolute inset-0 opacity-5 pointer-events-none">
       <svg className="w-full h-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
-        <path 
-          d="M0,50 Q250,0 500,50 T1000,50" 
-          fill="none" 
-          stroke="var(--color-tactical-cyan)" 
+        <path
+          d="M0,50 Q250,0 500,50 T1000,50"
+          fill="none"
+          stroke="var(--color-tactical-cyan)"
           strokeWidth="2"
           className="animate-pulse"
         />
-        <path 
-          d="M0,50 Q250,100 500,50 T1000,50" 
-          fill="none" 
-          stroke="var(--color-tactical-cyan)" 
+        <path
+          d="M0,50 Q250,100 500,50 T1000,50"
+          fill="none"
+          stroke="var(--color-tactical-cyan)"
           strokeWidth="1"
           className="animate-pulse"
           style={{ animationDelay: '1s' }}
@@ -214,8 +224,8 @@ export const ContactPanel = () => (
           For mission-critical inquiries, technical support, or partnership requests.
         </h2>
         <div className="flex justify-center">
-          <a 
-            href="mailto:contact@use-muse.com" 
+          <a
+            href="mailto:contact@use-muse.com"
             className="group relative px-12 py-6 bg-tactical-cyan/5 border border-tactical-cyan/20 text-tactical-cyan font-mono text-sm font-bold uppercase tracking-[0.2em] hover:bg-tactical-cyan hover:text-black transition-all duration-300 overflow-hidden"
           >
             <span className="relative z-10">contact@use-muse.com</span>
@@ -239,7 +249,7 @@ export const Footer = ({ onPrivacyClick }: { onPrivacyClick: () => void }) => (
           <a href="mailto:contact@use-muse.com" className="font-mono text-[10px] text-tactical-cyan hover:text-white transition-colors">contact@use-muse.com</a>
         </div>
         <div className="flex gap-8">
-          <button 
+          <button
             onClick={onPrivacyClick}
             className="font-mono text-[10px] text-gray-500 hover:text-white uppercase tracking-widest cursor-pointer"
           >
@@ -260,12 +270,12 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="relative w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-[#080808] border border-tactical-cyan/20 p-8 md:p-12"
       >
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
         >
@@ -274,7 +284,7 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
 
         <div className="font-mono text-[10px] text-tactical-cyan uppercase tracking-widest mb-6">Legal / Privacy Policy</div>
         <h2 className="text-3xl font-bold text-white mb-8">Privacy Policy</h2>
-        
+
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <section>
             <h3 className="text-white font-bold uppercase text-xs tracking-widest mb-3">1. Data Collection</h3>
