@@ -1,46 +1,22 @@
 import React from 'react';
-import { motion, useTime, useTransform } from 'motion/react';
+import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Zap, Network, Lock, Activity, Crosshair, X, ArrowRight, Volume2, Waves } from 'lucide-react';
 
-const Bar = ({ index, time }: { index: number; time: any; key?: React.Key }) => {
-  // Spread 5 bars across exactly half a cosine cycle (PI)
-  // This ensures the first bar is the 'cosine' and the last is the 'flipped cosine'
-  const phase = index * (Math.PI / 4);
-  
-  // Transform time (ms) into a scale value using a cosine wave
-  // 2500ms for a slightly slower, more tactical oscillation
-  const scaleY = useTransform(time, (t: number) => {
-    return 0.6 + 0.4 * Math.cos((t / 2500) * 2 * Math.PI + phase);
-  });
-  
-  // Sync opacity with scale
-  const opacity = useTransform(scaleY, [0.2, 1], [0.3, 1]);
+// Static heights for 5 bars — fixed random-looking values
+const BAR_HEIGHTS = [0.5, 0.9, 0.65, 1.0, 0.4];
 
-  return (
-    <motion.div 
-      className="w-0.5 bg-tactical-cyan" 
-      style={{ 
-        height: '100%', 
-        scaleY, 
-        opacity, 
-        transformOrigin: 'center' 
-      }} 
-    />
-  );
-};
-
-export const LogoSpectrum = () => {
-  const time = useTime();
-  
-  return (
-    <div className="flex items-center gap-0.5 h-4">
-      {[...Array(5)].map((_, i) => (
-        <Bar key={i} index={i} time={time} />
-      ))}
-    </div>
-  );
-};
+export const LogoSpectrum = () => (
+  <div className="flex items-center gap-0.5 h-4">
+    {BAR_HEIGHTS.map((scale, i) => (
+      <div
+        key={i}
+        className="w-0.5 bg-tactical-cyan"
+        style={{ height: '100%', transform: `scaleY(${scale})`, opacity: 0.4 + scale * 0.6, transformOrigin: 'center' }}
+      />
+    ))}
+  </div>
+);
 
 export const Navbar = () => (
   <nav className="fixed top-0 left-0 right-0 z-50 bg-tactical-bg border-b border-tactical-cyan/10">

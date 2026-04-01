@@ -56,11 +56,8 @@ export default function App() {
       setTimeout(() => ping.remove(), 1500);
     };
     const handleClick = (e: MouseEvent) => createPing(e.clientX, e.clientY);
-    const interval = setInterval(() => {
-      createPing(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
-    }, 3000);
     window.addEventListener('click', handleClick);
-    return () => { window.removeEventListener('click', handleClick); clearInterval(interval); };
+    return () => { window.removeEventListener('click', handleClick); };
   }, []);
 
   return (
