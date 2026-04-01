@@ -188,7 +188,7 @@ export const DemoPage = () => {
     } else {
       video.pause();
     }
-  }, [timeline.isPlaying, timeline.currentTime]);
+  }, [timeline.isPlaying, timeline.currentTime, selectedNodeId]);
 
   const togglePlay = () => setTimeline(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   const resetTimeline = () => {
