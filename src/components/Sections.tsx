@@ -30,7 +30,7 @@ const Bar = ({ index, time }: { index: number; time: any; key?: React.Key }) => 
   );
 };
 
-const LogoSpectrum = () => {
+export const LogoSpectrum = () => {
   const time = useTime();
   
   return (

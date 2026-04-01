@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, usePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { LogoSpectrum } from '../components/Sections';
 import {
   Play,
   Pause,
@@ -259,9 +260,7 @@ export const DemoPage = () => {
           </Link>
           <div className="w-px h-6 bg-white/10" />
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-ui-accent rounded-sm flex items-center justify-center">
-              <Activity className="text-black w-5 h-5" />
-            </div>
+            <LogoSpectrum />
             <h1 className="font-display font-bold tracking-widest text-lg uppercase">Echolocation</h1>
           </div>
         </div>
