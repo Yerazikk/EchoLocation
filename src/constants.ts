@@ -4,7 +4,7 @@ export const DEFAULT_NODES: CameraNode[] = [
   { id: "cam-1", name: "Camera 01", x: 31, y: 9 },
   { id: "cam-2", name: "Camera 02", x: 40, y: 68 },
   { id: "cam-3", name: "Camera 03", x: 17, y: 76 },
-  { id: "cam-4", name: "Camera 04", x: 94, y: 76 },
+  { id: "cam-4", name: "Camera 04", x: 85, y: 76 },
 ];
 
 export const TOTAL_DURATION = 70; // 1:10 in seconds
