@@ -57,7 +57,7 @@ export const Navbar = () => (
             { name: 'Overview', path: '/#overview' },
             { name: 'Capabilities', path: '/#capabilities' },
             { name: 'Demo', path: '/demo' },
-            { name: 'MVP', path: '/mvp', icon: Lock },
+            { name: 'Early Access', path: '/mvp', icon: Lock },
             { name: 'Contact', path: '/#contact' }
           ].map((item) => (
             item.path.startsWith('/#') ? (
@@ -105,7 +105,7 @@ export const Hero = () => (
               View Demo
             </Link>
             <Link to="/mvp" className="px-8 py-4 border border-tactical-cyan/30 text-tactical-cyan font-mono text-xs font-bold uppercase tracking-widest hover:bg-tactical-cyan/10 transition-all">
-              Local Deployment MVP
+              Early Access
             </Link>
           </div>
         </motion.div>
@@ -198,16 +198,16 @@ export const MVP = () => (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto text-center">
         <div className="font-mono text-[10px] text-tactical-cyan uppercase tracking-[0.3em] mb-4">Operational Alpha</div>
-        <h2 className="text-4xl font-bold text-white mb-6 tracking-tight uppercase">MVP RELEASE v1.0.0</h2>
+        <h2 className="text-4xl font-bold text-white mb-6 tracking-tight uppercase">Early Access v1.0.0</h2>
         <p className="text-gray-400 leading-relaxed mb-8">
-          The EchoLocation MVP is a fully functional tactical intelligence framework designed for local closed-network deployment. It provides real-time acoustic triangulation and incident visualization for emergency response teams.
+          The EchoLocation Early Access is a fully functional tactical intelligence framework designed for local closed-network deployment. It provides real-time acoustic triangulation and incident visualization for emergency response teams.
         </p>
         <div className="flex justify-center">
-          <Link 
-            to="/mvp" 
+          <Link
+            to="/mvp"
             className="inline-flex items-center gap-3 px-8 py-4 bg-tactical-cyan text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-all glow-cyan"
           >
-            Access MVP Page <Lock className="w-4 h-4" />
+            Access Early Access <Lock className="w-4 h-4" />
           </Link>
         </div>
       </div>
