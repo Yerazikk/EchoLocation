@@ -103,6 +103,7 @@ export const ResponderMobile = () => {
   const [transcriptionLines, setTranscriptionLines] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Live timer for technical readout
   useEffect(() => {
@@ -278,7 +279,9 @@ export const ResponderMobile = () => {
   }, [audioStream, isMonitoring, genAI]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const handleSend = (e?: React.FormEvent | React.KeyboardEvent) => {
@@ -428,7 +431,10 @@ export const ResponderMobile = () => {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto px-6 pt-12 pb-6 custom-scrollbar overscroll-contain bg-ui-bg/40 z-10">
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 pt-12 pb-6 custom-scrollbar overscroll-contain bg-ui-bg/40 z-10"
+      >
         <div className="flex flex-col">
           <div className="flex items-center justify-center mb-8">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-sm border border-white/5">
