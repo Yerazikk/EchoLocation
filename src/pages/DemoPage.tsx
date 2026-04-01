@@ -151,13 +151,20 @@ export const DemoPage = () => {
   useEffect(() => {
     const video = sidebarVideoRef.current;
     if (!video) return;
-    if (Math.abs(video.currentTime - timeline.currentTime) > 0.3) {
-      video.currentTime = timeline.currentTime;
-    }
-    if (timeline.isPlaying) {
-      video.play().catch(() => {});
+    const sync = () => {
+      if (Math.abs(video.currentTime - timeline.currentTime) > 0.3) {
+        video.currentTime = timeline.currentTime;
+      }
+      if (timeline.isPlaying) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    };
+    if (video.readyState >= 1) {
+      sync();
     } else {
-      video.pause();
+      video.addEventListener('loadedmetadata', sync, { once: true });
     }
   }, [timeline.isPlaying, timeline.currentTime, selectedNodeId]);
 
@@ -198,6 +205,7 @@ export const DemoPage = () => {
   const handlePlayClip = (event: AudioEvent) => {
     const startTime = Math.max(0, event.timestamp - 3);
     const endTime = Math.min(TOTAL_DURATION, event.timestamp + 5);
+    setSelectedNodeId(event.nodeId);
     setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
     setActiveClip({ startTime, endTime, eventId: event.id });
     lastTriggeredRef.current.add(event.id);
