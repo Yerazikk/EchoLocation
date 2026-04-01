@@ -17,9 +17,17 @@ import { DEFAULT_NODES, TOTAL_DURATION, CHOREOGRAPHED_EVENTS } from '../constant
 
 const VIDEO_MAP: Record<string, string> = {
   'cam-1': '/cam1.mp4',
-  'cam-2': '/fixedcam2.mp4',
+  'cam-2': '/cam2.mp4',
   'cam-3': '/cam3.mp4',
   'cam-4': '/cam4.mp4',
+};
+
+// Per-camera offset (seconds) to compensate for file-level sync drift
+const SYNC_OFFSETS: Record<string, number> = {
+  'cam-1': 0,
+  'cam-2': -1,
+  'cam-3': 0,
+  'cam-4': 0,
 };
 
 const COORDS: Record<string, { lat: number; lng: number }> = {
@@ -97,6 +105,9 @@ export const DemoPage = () => {
 
   const clipEndTimeRef    = useRef<number | null>(null);
   const lastTriggeredRef  = useRef<Set<string>>(new Set());
+  const prevTimeRef       = useRef<number>(0);
+  const syncIdRef         = useRef<number>(0);
+  const isClipJumpRef     = useRef<boolean>(false);
   const timelineBarRef    = useRef<HTMLDivElement>(null);
   const mapContainerRef   = useRef<HTMLDivElement>(null);
   const timerRef          = useRef<NodeJS.Timeout | null>(null);
@@ -114,22 +125,55 @@ export const DemoPage = () => {
 
   // ─── Imperative sync — the ONLY place videos are controlled ───────────────
   const syncAll = useCallback((time: number, playing: boolean) => {
-    Object.keys(videoRefsMap.current).forEach(id => {
-      const video = videoRefsMap.current[id];
-      if (!video) return;
-      if (Math.abs(video.currentTime - time) > 0.3) video.currentTime = time;
-      if (playing) video.play().catch(() => {});
-      else {
-        video.pause();
-        video.muted = true; // always mute on pause; handlePlayClip unmutes the clip camera
+    const syncId = ++syncIdRef.current;
+
+    const ids = Object.keys(videoRefsMap.current);
+    const videos = ids
+      .map(id => videoRefsMap.current[id])
+      .filter((v): v is HTMLVideoElement => v !== null);
+
+    // Always pause first so nothing plays while seeking
+    videos.forEach(v => v.pause());
+
+    if (!playing) {
+      ids.forEach(id => {
+        const v = videoRefsMap.current[id];
+        if (!v) return;
+        const target = Math.max(0, time + (SYNC_OFFSETS[id] ?? 0));
+        if (Math.abs(v.currentTime - target) > 0.3) v.currentTime = target;
+        v.muted = true;
+      });
+      const hv = hoverVideoRef.current;
+      if (hv) { if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time; hv.pause(); }
+      return;
+    }
+
+    // When playing: wait for every video that needs seeking to finish,
+    // then start them all at the same instant
+    let pending = 0;
+    const tryPlay = () => {
+      if (syncIdRef.current !== syncId) return; // superseded
+      if (--pending === 0) videos.forEach(v => v.play().catch(() => {}));
+    };
+
+    ids.forEach(id => {
+      const v = videoRefsMap.current[id];
+      if (!v) return;
+      const target = Math.max(0, time + (SYNC_OFFSETS[id] ?? 0));
+      if (Math.abs(v.currentTime - target) > 0.3) {
+        pending++;
+        v.addEventListener('seeked', tryPlay, { once: true });
+        v.currentTime = target;
       }
     });
-    // Also sync hover preview if visible
+
+    if (pending === 0) videos.forEach(v => v.play().catch(() => {}));
+
+    // Hover preview — sync independently (not blocking main play)
     const hv = hoverVideoRef.current;
     if (hv) {
       if (Math.abs(hv.currentTime - time) > 0.3) hv.currentTime = time;
-      if (playing) hv.play().catch(() => {});
-      else         hv.pause();
+      hv.play().catch(() => {});
     }
   }, []);
 
@@ -163,8 +207,23 @@ export const DemoPage = () => {
     if (currentTime === 0) {
       lastTriggeredRef.current.clear();
       setActiveEvents([]);
+      prevTimeRef.current = 0;
       return;
     }
+
+    // Scrubbed backward — re-arm events that are now in the future
+    // Skip this when the jump came from a clip play (log should stay intact)
+    if (currentTime < prevTimeRef.current) {
+      if (!isClipJumpRef.current) {
+        CHOREOGRAPHED_EVENTS.forEach(e => {
+          if (e.timestamp > currentTime) lastTriggeredRef.current.delete(e.id);
+        });
+        setActiveEvents(prev => prev.filter(e => e.timestamp <= currentTime));
+      }
+      isClipJumpRef.current = false;
+    }
+    prevTimeRef.current = currentTime;
+
     const now = Date.now();
     const newEvents = CHOREOGRAPHED_EVENTS.filter(e =>
       e.timestamp <= currentTime && !lastTriggeredRef.current.has(e.id)
@@ -231,8 +290,11 @@ export const DemoPage = () => {
     const startTime = Math.max(0, event.timestamp - 3);
     const endTime   = Math.min(TOTAL_DURATION, event.timestamp + 5);
     clipEndTimeRef.current = endTime;
-    lastTriggeredRef.current.add(event.id);
-    // Switch sidebar to the event's camera so the user sees the relevant feed
+    // Preserve all events seen up to now so the log doesn't clear when we jump back
+    CHOREOGRAPHED_EVENTS.forEach(e => {
+      if (e.timestamp <= timeline.currentTime) lastTriggeredRef.current.add(e.id);
+    });
+    isClipJumpRef.current = true;
     setSelectedNodeId(event.nodeId);
     syncAll(startTime, true);
     // Unmute the clip's camera so audio plays during clip playback
@@ -472,10 +534,15 @@ export const DemoPage = () => {
                   key={id}
                   ref={el => { videoRefsMap.current[id] = el; }}
                   src={src}
-                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
-                  style={{ opacity: selectedNodeId === id ? 1 : 0, pointerEvents: 'none' }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ opacity: selectedNodeId === id ? 1 : 0, willChange: 'opacity', pointerEvents: 'none' }}
                   muted
                   playsInline
+                  preload="auto"
+                  onLoadedData={e => {
+                    const t = timelineStateRef.current.currentTime;
+                    e.currentTarget.currentTime = t > 0 ? t : 0.001;
+                  }}
                 />
               ))}
 

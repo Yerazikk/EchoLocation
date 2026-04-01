@@ -10,7 +10,7 @@ coverage/
 # Raw/source video files
 *.mov
 *.webm
-"trimmed cam*.mp4"
+trimmed cam*.mp4
 
 # macOS zip artifacts
 __MACOSX/
