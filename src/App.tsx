@@ -84,7 +84,7 @@ export default function App() {
 
   const VIDEO_MAP: Record<string, string> = useMemo(() => ({
     'cam-1': '/cam1.mp4',
-    'cam-2': '/cam2.mp4',
+    'cam-2': '/fixedcam2.mp4',
     'cam-3': '/cam3.mp4',
     'cam-4': '/cam4.mp4',
   }), []);
