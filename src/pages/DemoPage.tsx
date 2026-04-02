@@ -517,49 +517,32 @@ export const DemoPage = () => {
                       </div>
 
                       {/* Hover preview popup — always mounted, synchronized by the main sync engine */}
-                      <AnimatePresence>
-                        {hoveredNode === node.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                            className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none z-[60]
-                              ${node.y < 50 ? 'top-full mt-8' : 'bottom-full mb-12'}`}
-                          >
-                            <div className="aspect-video w-48 border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none z-[60]">
-                              <VideoFeed 
-                                id={`hover-${node.id}`}
-                                src={VIDEO_MAP[node.id]}
-                                poster={POSTER_MAP[node.id]}
-                                isMuted={hoveredNode !== node.id}
-                                registerRef={el => { hoverVideoRefsMap.current[node.id] = el; }}
-                                currentTimeRef={timelineStateRef}
-                              />
-                            </div>
-                            <div className="p-2 border-t border-ui-border bg-ui-bg relative z-10">
-                              <span className="text-[9px] font-display font-bold uppercase tracking-widest text-ui-accent">{node.name}</span>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      
-                      {/* Technical preload: Render invisible videos for nodes we ARENT hovering to keep them synced and ready */}
-                      {hoveredNode !== node.id && VIDEO_MAP[node.id] && (
-                        <div className="hidden">
-                          <video 
-                            ref={el => { hoverVideoRefsMap.current[node.id] = el; }}
-                            src={VIDEO_MAP[node.id]} 
+                      <motion.div
+                        initial={false}
+                        animate={{ 
+                          opacity: hoveredNode === node.id ? 1 : 0, 
+                          scale: hoveredNode === node.id ? 1 : 0.9,
+                          y: hoveredNode === node.id ? 0 : 10 
+                        }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden z-[60] 
+                          ${hoveredNode === node.id ? 'pointer-events-auto' : 'pointer-events-none'}
+                          ${node.y < 50 ? 'top-full mt-8' : 'bottom-full mb-12'}`}
+                      >
+                        <div className="aspect-video w-48 border border-ui-border rounded-lg shadow-2xl overflow-hidden">
+                          <VideoFeed 
+                            id={`hover-${node.id}`}
+                            src={VIDEO_MAP[node.id]}
                             poster={POSTER_MAP[node.id]}
-                            muted 
-                            playsInline
-                            preload="auto"
-                            onLoadedData={e => {
-                              const t = timelineStateRef.current.currentTime;
-                              e.currentTarget.currentTime = t > 0 ? t : 0.001;
-                            }}
+                            isMuted={hoveredNode !== node.id}
+                            registerRef={el => { hoverVideoRefsMap.current[node.id] = el; }}
+                            currentTimeRef={timelineStateRef}
                           />
                         </div>
-                      )}
+                        <div className="p-2 border-t border-ui-border bg-ui-bg relative z-10">
+                          <span className="text-[9px] font-display font-bold uppercase tracking-widest text-ui-accent">{node.name}</span>
+                        </div>
+                      </motion.div>
                     </div>
                   </motion.div>
                 ))}
