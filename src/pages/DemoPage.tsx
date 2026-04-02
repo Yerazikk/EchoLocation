@@ -57,6 +57,25 @@ const VideoFeed = React.memo(({
   currentTimeRef: React.MutableRefObject<{ currentTime: number; isPlaying: boolean }>;
 }) => {
   const [isReady, setIsReady] = useState(false);
+  const internalRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync muted and playing state imperatively to ensure browser compliance
+  useEffect(() => {
+    const v = internalRef.current;
+    if (!v) return;
+    v.muted = isMuted;
+    v.volume = 1.0;
+    
+    const { isPlaying } = currentTimeRef.current;
+    if (isPlaying && v.paused) {
+      v.play().catch(() => {});
+    }
+  }, [isMuted, currentTimeRef]);
+
+  const setRef = (el: HTMLVideoElement | null) => {
+    internalRef.current = el;
+    registerRef(el);
+  };
 
   return (
     <div className={`relative overflow-hidden w-full h-full bg-ui-card ${className}`}>
@@ -67,7 +86,7 @@ const VideoFeed = React.memo(({
         style={{ opacity: isReady ? 0.3 : 1 }}
       />
       <video
-        ref={registerRef}
+        ref={setRef}
         src={src}
         className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 
           ${isReady ? 'opacity-100' : 'opacity-0'}`}
@@ -75,12 +94,13 @@ const VideoFeed = React.memo(({
         onMouseLeave={onMouseLeave}
         onPlaying={() => setIsReady(true)}
         onSeeking={() => setIsReady(false)}
-        muted={isMuted}
         playsInline
         preload="auto"
         onLoadedData={e => {
           const t = currentTimeRef.current.currentTime;
+          const isPlaying = currentTimeRef.current.isPlaying;
           e.currentTarget.currentTime = t > 0 ? t : 0.001;
+          if (isPlaying) e.currentTarget.play().catch(() => {});
         }}
       />
     </div>
