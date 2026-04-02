@@ -32,7 +32,7 @@ export const Navbar = () => (
         <div className="hidden md:flex items-center gap-8">
           {[
             { name: 'Overview', path: '/#overview' },
-            { name: 'Capabilities', path: '/#capabilities' },
+            { name: 'Features', path: '/#features' },
             { name: 'Demo', path: '/demo' },
             { name: 'Early Access', path: '/mvp', icon: Lock },
             { name: 'Contact', path: '/#contact' }
@@ -72,10 +72,11 @@ export const Hero = () => (
           transition={{ duration: 0.8 }}
         >
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-[0.9]">
-            Real-Time Audio Intelligence for Critical Incidents
+            Real-Time Audio Intelligence for Emergency Response
           </h1>
           <p className="text-xl text-gray-400 mb-10 leading-relaxed">
-            EchoLocation turns distributed sensor satellites into a real-time awareness grid, identifying likely gunfire sources, distress events, and timelines in a central mission control interface.          </p>
+            EchoLocation connects multiple audio sensors into one system, allowing teams to detect events, estimate their location, and follow activity in real time from a single interface.
+          </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/demo" className="px-8 py-4 bg-tactical-cyan text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-all glow-cyan">
               View Demo
@@ -125,16 +126,16 @@ export const Problem = () => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         {[
           {
-            title: "Limited Awareness",
-            desc: "Responders often enter critical environments with limited live situational data, increasing operational risk."
+            title: "Situational Awareness",
+            desc: "Real-time information to support decision-making."
           },
           {
-            title: "Visual Gaps",
-            desc: "Camera coverage is frequently incomplete, obstructed, or entirely inaccessible during high-stress incidents."
+            title: "Broader Coverage",
+            desc: "Detects events beyond camera visibility."
           },
           {
-            title: "Threat Direction",
-            desc: "Distributed acoustic intelligence helps surface probable threat direction and event progression in real-time."
+            title: "Event Localization",
+            desc: "Estimates where events occur and tracks movement in real time."
           }
         ].map((item, i) => (
           <div key={i} className="space-y-4">
@@ -148,13 +149,13 @@ export const Problem = () => (
   </section>
 );
 
-export const Capabilities = () => (
-  <section id="capabilities" className="py-20 bg-[#080808] tactical-grid">
+export const Features = () => (
+  <section id="features" className="py-20 bg-[#080808] tactical-grid">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div className="max-w-xl">
-          <h2 className="text-3xl font-bold text-white mb-4">Tactical Capabilities</h2>
-          <p className="text-gray-400">EchoLocation provides a robust suite of tools for rapid incident response and situational intelligence.</p>
+          <h2 className="text-3xl font-bold text-white mb-4">Core Features</h2>
+          <p className="text-gray-400">EchoLocation provides tools to support response coordination and monitoring.</p>
         </div>
         <div className="font-mono text-[10px] text-tactical-cyan uppercase tracking-widest border-b border-tactical-cyan/30 pb-2">
           System Specs v1.0.0
@@ -164,9 +165,9 @@ export const Capabilities = () => (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-tactical-cyan/10 border border-tactical-cyan/10">
         {[
           { icon: Shield, title: "Situational Awareness", desc: "Maintains a live operational picture to help teams understand evolving conditions during active response." },
-          { icon: Activity, title: "Acoustic Activity Monitoring", desc: "Surfaces notable sounds and disturbances in real time without requiring continuous manual oversight." },
+          { icon: Activity, title: "Acoustic Activity Monitoring", desc: "Identifies and highlights relevant audio events in real time with minimal manual monitoring." },
           { icon: Zap, title: "Rapid Response Support", desc: "Provides structured, confidence-based insights designed to assist trained personnel in high-pressure environments." },
-          { icon: Network, title: "Live Event Timeline", desc: "Organizes incoming signals into a clear, time-aligned sequence for coordinated decision-making." }
+          { icon: Network, title: "Live Event Timeline", desc: "Organizes incoming data into a time-aligned sequence to support coordination and review." }
         ].map((feat, i) => (
           <div key={i} className="bg-tactical-bg p-8 hover:bg-tactical-cyan/[0.02] transition-colors group">
             <feat.icon className="w-6 h-6 text-tactical-cyan mb-6 group-hover:scale-110 transition-transform" />
@@ -183,10 +184,10 @@ export const MVP = () => (
   <section id="mvp" className="py-20 border-t border-tactical-cyan/10 bg-[#080808]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto text-center">
-        <div className="font-mono text-[10px] text-tactical-cyan uppercase tracking-[0.3em] mb-4">Operational Alpha</div>
+        <div className="font-mono text-[10px] text-tactical-cyan uppercase tracking-[0.3em] mb-4">Active Deployment</div>
         <h2 className="text-4xl font-bold text-white mb-6 tracking-tight uppercase">Early Access v1.0.0</h2>
         <p className="text-gray-400 leading-relaxed mb-8">
-          The EchoLocation Early Access is a fully functional tactical intelligence framework designed for local closed-network deployment. It provides real-time acoustic triangulation and incident visualization for emergency response teams.
+          The EchoLocation Early Access program provides a locally deployable system for real-time audio analysis and incident visualization. It enables real-time audio-based event localization and visualization for emergency response teams.
         </p>
         <div className="flex justify-center">
           <Link
@@ -205,9 +206,9 @@ export const Privacy = () => (
   <section className="py-20">
     <div className="max-w-3xl mx-auto px-4 text-center">
       <Shield className="w-8 h-8 text-tactical-cyan mx-auto mb-8" />
-      <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">Controlled Positioning & Privacy</h2>
+      <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">Access Control & Data Privacy</h2>
       <p className="text-gray-400 leading-relaxed mb-8">
-        EchoLocation is designed to support authorized emergency response personnel. The system operates on local, closed networks with controlled data retention policies. It is an intelligence-support tool intended to augment, not replace, the judgment of trained responders.
+        EchoLocation is designed to support authorized emergency response personnel. The system operates on local networks with configurable data retention and access controls. It is designed to support, not replace, the judgment of trained responders.
       </p>
       <div className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 rounded-sm bg-white/5 font-mono text-[10px] text-gray-500 uppercase tracking-widest">
         <Lock className="w-3 h-3" /> Secure Local Operation Only
@@ -221,7 +222,7 @@ export const ContactPanel = () => (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl font-bold text-white mb-10 uppercase tracking-tight leading-tight">
-          For mission-critical inquiries, technical support, or partnership requests.
+          For inquiries, technical support, or partnerships.
         </h2>
         <div className="flex justify-center">
           <a

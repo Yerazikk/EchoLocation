@@ -9,9 +9,9 @@ export const InteractiveDemo = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <div className="font-mono text-xs text-tactical-cyan uppercase tracking-[0.3em] mb-3">Live System</div>
-          <h2 className="text-3xl font-bold text-white mb-4">Mission Control Console</h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Monitoring Dashboard</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Real-time acoustic intelligence grid with distributed camera satellites, live event detection, and synchronized playback.
+            A real-time interface that combines sensor data, event detection, and playback.
           </p>
         </div>
 
@@ -23,11 +23,11 @@ export const InteractiveDemo = () => {
               <div className="w-8 h-8 bg-tactical-cyan/20 flex items-center justify-center rounded-sm">
                 <Activity className="w-5 h-5 text-tactical-cyan" />
               </div>
-              <span className="font-mono text-sm font-bold tracking-widest text-white">ECHOLOCATION</span>
+              <span className="font-mono text-sm font-bold tracking-widest text-white uppercase">Echolocation</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-tactical-cyan animate-pulse" />
-              <span className="font-mono text-[10px] text-tactical-cyan uppercase tracking-widest">System Ready</span>
+              <span className="font-mono text-[10px] text-tactical-cyan uppercase tracking-widest">System Online</span>
             </div>
           </div>
 

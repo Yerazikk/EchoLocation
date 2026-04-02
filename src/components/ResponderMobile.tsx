@@ -91,7 +91,7 @@ export const ResponderMobile = () => {
   }, []);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMonitoring, setIsMonitoring] = useState(true);
+  const [isMonitoring, setIsMonitoring] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [messages, setMessages] = useState([
     { id: 1, text: "Oh god, they're in the hallway. I can hear them. Please tell me you're close. We're in room 302.", time: '09:41:02', status: 'read' as const },
@@ -100,7 +100,7 @@ export const ResponderMobile = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [audioData, setAudioData] = useState<number[]>(new Array(48).fill(0));
-  const [transcriptionLines, setTranscriptionLines] = useState<string[]>([]);
+  const [transcriptionLines, setTranscriptionLines] = useState<string[]>(["Clear.", "COPY"]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const chatEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -393,7 +393,7 @@ export const ResponderMobile = () => {
               {isMonitoring ? 'Monitoring Active' : 'Uplink Suspended'}
             </span>
           </div>
-          <span className="text-[7px] text-white/30 uppercase tracking-tighter">GPS Locked</span>
+          <span className="text-[7px] text-white/30 uppercase tracking-tighter">GPS Connected</span>
         </div>
 
         <div className="w-full bg-black/80 backdrop-blur-md rounded-sm p-3 border border-ui-accent/10 z-10 relative h-32 flex flex-col justify-center overflow-hidden">

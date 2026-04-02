@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Navbar, Hero, Problem, Capabilities, MVP, Privacy, ContactPanel, Footer, PrivacyPolicyModal } from './components/Sections';
+import { Navbar, Hero, Problem, Features, MVP, Privacy, ContactPanel, Footer, PrivacyPolicyModal } from './components/Sections';
 import { InteractiveDemo } from './components/InteractiveDemo';
 import { MVPPage } from './pages/MVPPage';
 import { DemoPage } from './pages/DemoPage';
@@ -22,7 +22,7 @@ const HomePage = () => (
   <main>
     <div id="overview"><Hero /></div>
     <Problem />
-    <div id="capabilities"><Capabilities /></div>
+    <div id="features"><Features /></div>
     <div id="demo"><InteractiveDemo /></div>
     <MVP />
     <Privacy />

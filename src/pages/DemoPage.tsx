@@ -404,7 +404,7 @@ export const DemoPage = () => {
         <div className="hidden md:flex items-center gap-8 mr-2">
           {[
             { name: 'Overview',      path: '/#overview' },
-            { name: 'Capabilities',  path: '/#capabilities' },
+            { name: 'Features',      path: '/#features' },
             { name: 'Demo',          path: '/demo' },
             { name: 'Early Access',  path: '/mvp' },
             { name: 'Contact',       path: '/#contact' },
