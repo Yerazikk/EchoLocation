@@ -396,20 +396,16 @@ export const DemoPage = () => {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="h-16 border-b border-ui-border flex items-center justify-between px-6 bg-ui-bg/80 backdrop-blur-md z-50 shrink-0">
         <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mr-2">
-            <ArrowLeft size={16} />
-            <span className="text-xs font-mono uppercase tracking-wider">Back</span>
-          </Link>
-          <div className="w-px h-6 bg-white/10" />
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity translate-y-[1px]">
             <LogoSpectrum />
             <h1 className="font-display font-bold tracking-widest text-lg uppercase">Echolocation</h1>
-          </div>
+          </Link>
         </div>
         <div className="hidden md:flex items-center gap-8 mr-2">
           {[
             { name: 'Overview',      path: '/#overview' },
             { name: 'Capabilities',  path: '/#capabilities' },
+            { name: 'Demo',          path: '/demo' },
             { name: 'Early Access',  path: '/mvp' },
             { name: 'Contact',       path: '/#contact' },
           ].map(item =>
@@ -418,7 +414,12 @@ export const DemoPage = () => {
                 {item.name}
               </a>
             ) : (
-              <Link key={item.name} to={item.path} className="font-mono text-[11px] uppercase tracking-widest text-gray-400 hover:text-tactical-cyan transition-colors">
+              <Link 
+                key={item.name} 
+                to={item.path} 
+                className={`font-mono text-[11px] uppercase tracking-widest transition-colors 
+                  ${item.name === 'Demo' ? 'text-ui-accent font-bold' : 'text-gray-400 hover:text-tactical-cyan'}`}
+              >
                 {item.name}
               </Link>
             )

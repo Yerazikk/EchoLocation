@@ -26,7 +26,7 @@ export const Navbar = () => (
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-3">
             <LogoSpectrum />
-            <span className="font-mono text-lg font-bold tracking-tighter text-white">ECHOLOCATION</span>
+            <span className="font-display text-lg font-bold tracking-widest text-white uppercase">Echolocation</span>
           </Link>
         </div>
         <div className="hidden md:flex items-center gap-8">
@@ -244,7 +244,7 @@ export const Footer = ({ onPrivacyClick }: { onPrivacyClick: () => void }) => (
         <div className="flex flex-col items-center md:items-start gap-2">
           <div className="flex items-center gap-3">
             <LogoSpectrum />
-            <span className="font-mono text-sm font-bold tracking-tighter text-white">ECHOLOCATION</span>
+            <span className="font-display text-sm font-bold tracking-widest text-white uppercase">Echolocation</span>
           </div>
           <a href="mailto:contact@use-muse.com" className="font-mono text-[10px] text-tactical-cyan hover:text-white transition-colors">contact@use-muse.com</a>
         </div>
