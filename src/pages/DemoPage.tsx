@@ -44,46 +44,45 @@ const COORDS: Record<string, { lat: number; lng: number }> = {
   'cam-4': { lat: 34.402990673406116,  lng: -118.56924932307518 },
 };
 
-// ─── Hover preview — muted, synced by parent via ref ────────────────────────
-const CameraHoverPreview = React.memo(({
-  src,
-  registerRef,
-  timelineStateRef,
+
+// ─── Optimized Video Feed Component — isolated re-renders ────────────────────
+const VideoFeed = React.memo(({ 
+  id, src, poster, isMuted, registerRef, onMouseEnter, onMouseLeave, className, currentTimeRef 
 }: {
-  src: string;
-  nodeName: string;
+  id: string; src: string; poster: string; isMuted: boolean; 
   registerRef: (el: HTMLVideoElement | null) => void;
-  timelineStateRef: React.MutableRefObject<{ currentTime: number; isPlaying: boolean }>;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  className?: string;
+  currentTimeRef: React.MutableRefObject<{ currentTime: number; isPlaying: boolean }>;
 }) => {
-  const setRef = useCallback((el: HTMLVideoElement | null) => {
-    registerRef(el);
-    if (!el) return;
-    const init = () => {
-      const { currentTime, isPlaying } = timelineStateRef.current;
-      el.currentTime = currentTime;
-      el.muted = false;
-      el.volume = 1.0;
-      if (isPlaying) el.play().catch(() => {});
-    };
-    if (el.readyState >= 1) init();
-    else el.addEventListener('loadedmetadata', init, { once: true });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [isReady, setIsReady] = useState(false);
 
   return (
-    <div className="aspect-video bg-ui-card relative overflow-hidden">
-      <video 
-        ref={setRef} 
-        src={src} 
-        poster={`/${src.split('/').pop()?.replace('.mp4', '')}-poster.png`}
-        className="absolute inset-0 w-full h-full object-cover" 
-        playsInline 
-        preload="auto"
+    <div className={`relative overflow-hidden w-full h-full bg-ui-card ${className}`}>
+      <img 
+        src={poster} 
+        alt="" 
+        className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300"
+        style={{ opacity: isReady ? 0.3 : 1 }}
       />
-      <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[8px] font-mono uppercase tracking-tighter text-white/60">Live Feed</span>
-      </div>
-      <div className="scanline" />
+      <video
+        ref={registerRef}
+        src={src}
+        className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 
+          ${isReady ? 'opacity-100' : 'opacity-0'}`}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onPlaying={() => setIsReady(true)}
+        onSeeking={() => setIsReady(false)}
+        muted={isMuted}
+        playsInline
+        preload="auto"
+        onLoadedData={e => {
+          const t = currentTimeRef.current.currentTime;
+          e.currentTarget.currentTime = t > 0 ? t : 0.001;
+        }}
+      />
     </div>
   );
 });
@@ -183,7 +182,9 @@ export const DemoPage = () => {
       }
     });
 
-    if (pending === 0) allVideos.forEach(item => item.v.play().catch(() => {}));
+    if (pending === 0) {
+      allVideos.forEach(item => item.v.play().catch(() => {}));
+    }
   }, []);
 
   // ─── Interval timer — advances currentTime only, never touches videos ─────
@@ -505,26 +506,15 @@ export const DemoPage = () => {
                             className={`absolute left-1/2 -translate-x-1/2 w-48 bg-ui-card border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none z-[60]
                               ${node.y < 50 ? 'top-full mt-8' : 'bottom-full mb-12'}`}
                           >
-                            <div className="aspect-video bg-black relative overflow-hidden">
-                              {VIDEO_MAP[node.id] && (
-                                <video 
-                                  ref={el => { hoverVideoRefsMap.current[node.id] = el; }}
-                                  src={VIDEO_MAP[node.id]} 
-                                  className="absolute inset-0 w-full h-full object-cover" 
-                                  playsInline 
-                                  muted
-                                  preload="auto"
-                                  onLoadedData={e => {
-                                    const t = timelineStateRef.current.currentTime;
-                                    e.currentTarget.currentTime = t > 0 ? t : 0.001;
-                                  }}
-                                />
-                              )}
-                              <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10 text-white/90">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                <span className="text-[8px] font-mono uppercase tracking-tighter text-white/80">Live Feed</span>
-                              </div>
-                              <div className="scanline" />
+                            <div className="aspect-video w-48 border border-ui-border rounded-lg shadow-2xl overflow-hidden pointer-events-none z-[60]">
+                              <VideoFeed 
+                                id={`hover-${node.id}`}
+                                src={VIDEO_MAP[node.id]}
+                                poster={POSTER_MAP[node.id]}
+                                isMuted={hoveredNode !== node.id}
+                                registerRef={el => { hoverVideoRefsMap.current[node.id] = el; }}
+                                currentTimeRef={timelineStateRef}
+                              />
                             </div>
                             <div className="p-2 border-t border-ui-border bg-ui-bg relative z-10">
                               <span className="text-[9px] font-display font-bold uppercase tracking-widest text-ui-accent">{node.name}</span>
@@ -596,23 +586,22 @@ export const DemoPage = () => {
             >
               {/* All 4 videos always mounted — only selected is visible */}
               {Object.entries(VIDEO_MAP).map(([id, src]) => (
-                <video
-                  key={id}
-                  ref={el => { videoRefsMap.current[id] = el; }}
-                  src={src}
-                  poster={POSTER_MAP[id]}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ opacity: selectedNodeId === id ? 1 : 0, willChange: 'opacity', pointerEvents: 'none' }}
-                  onMouseEnter={() => setIsSidebarHovered(true)}
-                  onMouseLeave={() => setIsSidebarHovered(false)}
-                  muted={!(selectedNodeId === id && (isSidebarHovered || (clipEndTimeRef.current !== null && timeline.isPlaying)))}
-                  playsInline
-                  preload="auto"
-                  onLoadedData={e => {
-                    const t = timelineStateRef.current.currentTime;
-                    e.currentTarget.currentTime = t > 0 ? t : 0.001;
-                  }}
-                />
+                <div 
+                  key={id} 
+                  className="absolute inset-0 transition-opacity duration-300"
+                  style={{ opacity: selectedNodeId === id ? 1 : 0, pointerEvents: selectedNodeId === id ? 'auto' : 'none' }}
+                >
+                  <VideoFeed 
+                    id={id}
+                    src={src}
+                    poster={POSTER_MAP[id]}
+                    isMuted={!(selectedNodeId === id && (isSidebarHovered || (clipEndTimeRef.current !== null && timeline.isPlaying)))}
+                    registerRef={el => { videoRefsMap.current[id] = el; }}
+                    onMouseEnter={() => setIsSidebarHovered(true)}
+                    onMouseLeave={() => setIsSidebarHovered(false)}
+                    currentTimeRef={timelineStateRef}
+                  />
+                </div>
               ))}
 
               {selectedNodeId ? (
