@@ -119,3 +119,13 @@
   background: rgba(0, 242, 255, 0.1);
   border-radius: 10px;
 }
+
+/* ── Hide scrollbars globally but maintain functionality ── */
+* {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, etc. */
+}

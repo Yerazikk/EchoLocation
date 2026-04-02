@@ -149,6 +149,19 @@ export const DemoPage = () => {
   const mapContainerRef   = useRef<HTMLDivElement>(null);
   const timerRef          = useRef<NodeJS.Timeout | null>(null);
 
+  // Stable handlers for VideoFeed components to prevent ref-storm or infinite loops
+  const setVideoRef = useCallback((id: string, el: HTMLVideoElement | null) => {
+    videoRefsMap.current[id] = el;
+  }, []);
+
+  const setHoverVideoRef = useCallback((id: string, el: HTMLVideoElement | null) => {
+    hoverVideoRefsMap.current[id] = el;
+  }, []);
+
+  const handleNodeHoverStart = useCallback((id: string) => setHoveredNode(id), []);
+  const handleNodeHoverEnd = useCallback(() => setHoveredNode(null), []);
+  const handleNodeSelect = useCallback((id: string) => setSelectedNodeId(id), []);
+
   const MAP_HEIGHT = 600;
   const mapSize = useMemo(() => {
     if (!mapAspect) return { width: 900, height: MAP_HEIGHT };
@@ -161,7 +174,7 @@ export const DemoPage = () => {
   }, [timeline]);
 
   // ─── Imperative sync — the ONLY place videos are controlled ───────────────
-  const syncAll = useCallback((time: number, playing: boolean) => {
+  const syncAll = useCallback((time: number, playing: boolean, skipIds: string[] = []) => {
     const syncId = ++syncIdRef.current;
 
     const mainIds = Object.keys(videoRefsMap.current);
@@ -172,8 +185,10 @@ export const DemoPage = () => {
       ...hoverIds.map(id => ({ id: `hover-${id}`, v: hoverVideoRefsMap.current[id], offset: 0 }))
     ].filter(v => v.v !== null) as { id: string; v: HTMLVideoElement; offset: number }[];
 
-    // Always pause first so nothing plays while seeking
-    allVideos.forEach(item => item.v.pause());
+    // Always pause first so nothing plays while seeking (unless explicitly skipped for audio context)
+    allVideos.forEach(item => {
+      if (!skipIds.includes(item.id)) item.v.pause();
+    });
 
     if (!playing) {
       allVideos.forEach(item => {
@@ -316,43 +331,30 @@ export const DemoPage = () => {
     const startTime = Math.max(0, event.timestamp - 1);
     const endTime   = Math.min(TOTAL_DURATION, event.timestamp + 2);
     
-    const execute = (log: boolean) => {
-      if (log) console.log(`[AudioDebug] PlayClip triggered for ${event.label} at ${event.timestamp}s`);
-      clipEndTimeRef.current = endTime;
-      setActiveClipId(event.id);
-      // Preserve all events seen up to now so the log doesn't clear when we jump back
-      CHOREOGRAPHED_EVENTS.forEach(e => {
-        if (e.timestamp <= timeline.currentTime) lastTriggeredRef.current.add(e.id);
-      });
-      isClipJumpRef.current = true;
-      setSelectedNodeId(event.nodeId);
-      
-      // Unmute the specified video immediately to satisfy browser requirements for user gesture
-      const v = videoRefsMap.current[event.nodeId];
-      if (v) {
-        v.muted = false;
-        v.volume = 1.0;
-        if (log) console.log(`[AudioDebug] Unmuted video for camera: ${event.nodeId}`);
-      }
+    // IMMEDIATE: Reach into the hardware and un-mute before anything else
+    // This satisfies the browser's "User Gesture" security synchronously.
+    const v = videoRefsMap.current[event.nodeId];
+    if (v) {
+      v.muted = false;
+      v.volume = 1.0;
+      // Also start it playing immediately so the audio context is active
+      v.play().catch(() => {});
+    }
 
-      // CRITICAL: Synchronously initiate play on all videos to capture the user gesture
-      // This prevents "NotAllowedError" if syncAll() takes too long to seek.
-      Object.values(videoRefsMap.current).forEach(vid => {
-        if (vid instanceof HTMLVideoElement) {
-          vid.play().catch(err => console.debug('[AudioDebug] Sync play error (expected if seeking):', err));
-        }
-      });
-
-      syncAll(startTime, true);
-      setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
-    };
-
-    // Quick fix: Run twice to ensure state settlement and audio activation
-    execute(true);
-    setTimeout(() => {
-      console.log(`[AudioDebug] Running double-play quick fix...`);
-      execute(false);
-    }, 50);
+    clipEndTimeRef.current = endTime;
+    setActiveClipId(event.id);
+    
+    // Preserve all events seen up to now 
+    CHOREOGRAPHED_EVENTS.forEach(e => {
+      if (e.timestamp <= timeline.currentTime) lastTriggeredRef.current.add(e.id);
+    });
+    
+    isClipJumpRef.current = true;
+    setSelectedNodeId(event.nodeId);
+    
+    // We skip the pause on the target node to keep the audio context "warm"
+    syncAll(startTime, true, [event.nodeId]);
+    setTimeline(prev => ({ ...prev, currentTime: startTime, isPlaying: true }));
   };
 
   const formatTime = (seconds: number) => {
@@ -446,12 +448,12 @@ export const DemoPage = () => {
                     key={node.id}
                     className="absolute group"
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                    onMouseEnter={() => setHoveredNode(node.id)}
-                    onMouseLeave={() => setHoveredNode(null)}
+                    onMouseEnter={() => handleNodeHoverStart(node.id)}
+                    onMouseLeave={handleNodeHoverEnd}
                   >
                     <div
                       className="relative cursor-pointer -translate-x-1/2 -translate-y-1/2"
-                      onClick={e => { e.stopPropagation(); setSelectedNodeId(node.id); }}
+                      onClick={e => { e.stopPropagation(); handleNodeSelect(node.id); }}
                     >
                       {/* Floating event labels */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 pointer-events-none z-50 w-64 flex flex-col items-center">
@@ -535,7 +537,7 @@ export const DemoPage = () => {
                             src={VIDEO_MAP[node.id]}
                             poster={POSTER_MAP[node.id]}
                             isMuted={hoveredNode !== node.id}
-                            registerRef={el => { hoverVideoRefsMap.current[node.id] = el; }}
+                            registerRef={el => setHoverVideoRef(node.id, el)}
                             currentTimeRef={timelineStateRef}
                           />
                         </div>
@@ -599,7 +601,7 @@ export const DemoPage = () => {
                     src={src}
                     poster={POSTER_MAP[id]}
                     isMuted={!(selectedNodeId === id && (isSidebarHovered || (clipEndTimeRef.current !== null && timeline.isPlaying)))}
-                    registerRef={el => { videoRefsMap.current[id] = el; }}
+                    registerRef={el => setVideoRef(id, el)}
                     onMouseEnter={() => setIsSidebarHovered(true)}
                     onMouseLeave={() => setIsSidebarHovered(false)}
                     currentTimeRef={timelineStateRef}
