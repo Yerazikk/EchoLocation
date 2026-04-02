@@ -254,6 +254,8 @@ export const DemoPage = () => {
   // ─── Floating event label logic ────────────────────────────────────────────
   useEffect(() => {
     const currentTime = timeline.currentTime;
+    const prevTime = prevTimeRef.current;
+    
     if (currentTime === 0) {
       lastTriggeredRef.current.clear();
       setActiveEvents([]);
@@ -261,18 +263,23 @@ export const DemoPage = () => {
       return;
     }
 
-    // Keeping the persistent log (events no longer delete when scrubbing backward)
-    prevTimeRef.current = currentTime;
+    // Identify events that were crossed in THIS tick (forward direction only)
+    const justCrossed = CHOREOGRAPHED_EVENTS.filter(e => 
+      e.timestamp > prevTime && e.timestamp <= currentTime
+    );
+
+    // Update persistent log tracking (lastTriggeredRef) for the Sidebar Log
+    justCrossed.forEach(e => lastTriggeredRef.current.add(e.id));
 
     const now = Date.now();
-    const newEvents = CHOREOGRAPHED_EVENTS.filter(e =>
-      e.timestamp <= currentTime && !lastTriggeredRef.current.has(e.id)
-    );
-    if (newEvents.length > 0) {
-      newEvents.forEach(e => lastTriggeredRef.current.add(e.id));
+    const deltaTime = Math.abs(currentTime - prevTime);
+    const isLargeJump = deltaTime > 0.3; // Threshold to detect scrubbing vs natural playback
+    
+    // Only trigger floating popups for newly crossed events if we aren't scrubbing/jumping
+    if (justCrossed.length > 0 && !isLargeJump) {
       setActiveEvents(prev => {
         const filtered = prev.filter(e => e.expiresAt! > now);
-        const withExpiry = newEvents.map((e, idx) => ({
+        const withExpiry = justCrossed.map((e, idx) => ({
           ...e,
           expiresAt: now + 4000,
           initialOffset: (filtered.filter(ev => ev.nodeId === e.nodeId).length + idx) * -28,
@@ -280,11 +287,14 @@ export const DemoPage = () => {
         return [...filtered, ...withExpiry];
       });
     } else {
+      // Just clean up expired events, don't trigger new ones if we're jumping
       setActiveEvents(prev => {
         const filtered = prev.filter(e => e.expiresAt! > now);
         return filtered.length === prev.length ? prev : filtered;
       });
     }
+
+    prevTimeRef.current = currentTime;
   }, [timeline.currentTime]);
 
   // ─── Actions ───────────────────────────────────────────────────────────────
